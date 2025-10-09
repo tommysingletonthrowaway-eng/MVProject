@@ -45,6 +45,7 @@ class BankAccountTest {
         assertEquals(100, account.getBalance());
         assertEquals("$100.00", account.getFormattedBalance());
 
+        account.setCurrency(Currency.GBP, false);
         account.setCurrency(Currency.USD, true);
         double conversionRate = CurrencyConverter.getConversionRate(Currency.GBP, Currency.USD);
         double expectedResult = 100.00 * conversionRate;
