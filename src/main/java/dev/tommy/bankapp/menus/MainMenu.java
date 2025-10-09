@@ -7,8 +7,8 @@ import dev.tommy.bankapp.utils.CLIUtils;
 public class MainMenu {
     public static void mainMenu() {
         while (true) {
-            IO.println("");
-            IO.println("=== Bank Management CLI ===");
+            CLIUtils.printTitle("Bank Management CLI");
+
             IO.println("1. Login");
             IO.println("2. Signup");
             IO.println("3. List Users");
@@ -42,8 +42,7 @@ public class MainMenu {
     }
 
     private static void printAllUsers() {
-        IO.println();
-        IO.println("=== All Users ===");
+        CLIUtils.printTitle("All Users");
         for (User user : BankApp.Context.userDatabase.users()) {
             IO.println(user);
         }
@@ -52,8 +51,7 @@ public class MainMenu {
     }
 
     private static void onExitProgram() {
-        IO.println();
-        IO.println("=== Exiting Program ===");
+        CLIUtils.printTitle("Exiting Program");
 
         boolean saved = BankApp.saveUsers();
         if (!saved) {

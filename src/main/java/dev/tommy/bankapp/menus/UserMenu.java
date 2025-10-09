@@ -9,8 +9,7 @@ import dev.tommy.bankapp.utils.CLIUtils;
 public class UserMenu {
     public static void showUser(User user) {
         while (true) {
-            IO.println();
-            IO.println("=== Welcome user: " + user.getUsername() + " ===");
+            CLIUtils.printTitle("Welcome user: " + user.getUsername());
 
             IO.println(1 + ". Open account");
             IO.println(2 + ". Create new account");
@@ -68,10 +67,9 @@ public class UserMenu {
 
 
     private static void promptOpenBankAccount(User user) {
-        var accounts = user.getBankAccounts();
+        CLIUtils.printTitle("Open Bank Account");
 
-        IO.println();
-        IO.println("=== Open Bank Account ===");
+        var accounts = user.getBankAccounts();
         for (int i = 0; i < accounts.size(); i++) {
             IO.println((i + 1) + ". Open account '" + accounts.get(i).getIdentifier() + "'");
         }
@@ -98,9 +96,9 @@ public class UserMenu {
     }
 
     private static void promptChangeUsername(User user) {
+        CLIUtils.printTitle("Change Account Username");
+
         String startUsername = user.getUsername();
-        IO.println();
-        IO.println("=== Change Account Username ===");
         String username = promptUsername();
         if (username == null) {
             return;
@@ -114,8 +112,8 @@ public class UserMenu {
     }
 
     private static boolean promptDeleteUser(User user) {
-        IO.println();
-        IO.println("=== Delete User ===");
+        CLIUtils.printTitle("Delete User");
+
         IO.println("Are you sure you want to delete your user '" + user + "' and all bank accounts?");
         IO.println("Enter 'DELETE' to delete permanently");
         String input = CLIUtils.scanner.nextLine();
@@ -134,8 +132,8 @@ public class UserMenu {
     }
 
     private static void promptChangePassword(User user) {
-        IO.println();
-        IO.println("=== Change Account Password ===");
+        CLIUtils.printTitle("Change Account Password");
+
         String password = promptPassword();
         if (password == null) {
             return;
@@ -149,8 +147,8 @@ public class UserMenu {
     }
 
     private static void promptDeleteAccount(User user) {
-        IO.println();
-        IO.println("=== Delete Account ===");
+        CLIUtils.printTitle("Delete Account");
+
         var accounts = user.getBankAccounts();
         for (int i = 0; i < accounts.size(); i++) {
             IO.println((i + 1) + ". Delete account '" + accounts.get(i).getIdentifier() + "'");
@@ -188,8 +186,7 @@ public class UserMenu {
     }
 
     public static void signupUser() {
-        IO.println();
-        IO.println("=== Signup User ===");
+        CLIUtils.printTitle("Signup User");
 
         String username = promptUsername();
         if (username == null) return;
@@ -207,8 +204,7 @@ public class UserMenu {
     }
 
     public static User loginUser() {
-        IO.println();
-        IO.println("=== Login User ===");
+        CLIUtils.printTitle("Login User");
         IO.print("Enter username: ");
         String username = CLIUtils.scanner.nextLine();
 

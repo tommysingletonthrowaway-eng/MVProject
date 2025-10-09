@@ -9,4 +9,12 @@ public class CLIUtils {
         IO.println("Press enter to continue...");
         scanner.nextLine();
     }
+
+    public static void printTitle(String title) {
+        IO.println("\n=== " + title + " ===");
+    }
+
+    public static void printSeparator() {
+        IO.println("------------------------------");
+    }
 }

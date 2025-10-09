@@ -11,8 +11,7 @@ import dev.tommy.bankapp.utils.CurrencyConverter;
 public class AccountMenu {
     public static void showMenu(BankAccount account) {
         while (true) {
-            IO.println();
-            IO.println("=== " + account + " - Account Menu ===");
+            CLIUtils.printTitle(account + " - Account Menu");
 
             IO.println("1. Check balance");
             IO.println("2. Deposit");
@@ -51,8 +50,7 @@ public class AccountMenu {
     }
 
     private static void showTransactionHistory(BankAccount account) {
-        IO.println();
-        IO.println("=== Transaction History ===");
+        CLIUtils.printTitle("Transaction History");
 
         for (Transaction transaction : account.getTransactionHistory()) {
             IO.println("    " + transaction);
@@ -62,8 +60,7 @@ public class AccountMenu {
     }
 
     private static void promptChangeCurrency(BankAccount account) {
-        IO.println();
-        IO.println("=== Change Currency ===");
+        CLIUtils.printTitle("Change Currency");
         IO.println();
         IO.println("--- Currency Options ---");
         for (Currency currency : Currency.values()) {
@@ -104,8 +101,8 @@ public class AccountMenu {
     }
 
     private static void promptWithdraw(BankAccount account) {
-        IO.println();
-        IO.println("=== Withdraw ===");
+        CLIUtils.printTitle("Withdraw");
+
         IO.print("Enter withdrawal amount: ");
         try {
             double withdrawalAmount = CLIUtils.scanner.nextDouble();
@@ -133,8 +130,8 @@ public class AccountMenu {
     }
 
     private static void promptDeposit(BankAccount account) {
-        IO.println();
-        IO.println("=== Deposit ===");
+        CLIUtils.printTitle("Deposit");
+
         IO.print("Enter deposit amount: ");
         try {
             double depositAmount = CLIUtils.scanner.nextDouble();
@@ -161,8 +158,8 @@ public class AccountMenu {
 
 
     private static void printBalance(BankAccount account) {
-        IO.println();
-        IO.println("=== Balance ===");
+        CLIUtils.printTitle("Balance");
+
         IO.println("Balance: " + account.getFormattedBalance());
         CLIUtils.pressEnterToContinue();
     }
