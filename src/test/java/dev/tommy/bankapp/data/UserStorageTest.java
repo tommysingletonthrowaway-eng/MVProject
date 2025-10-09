@@ -1,7 +1,11 @@
 package dev.tommy.bankapp.data;
 
+import dev.tommy.bankapp.encryption.EncryptionStrategy;
+import dev.tommy.bankapp.encryption.NoEncryption;
+import dev.tommy.bankapp.encryption.SimpleXOREncryption;
 import org.junit.jupiter.api.Test;
 
+import javax.security.auth.kerberos.EncryptionKey;
 import java.util.HashSet;
 import java.util.Set;
 
@@ -10,6 +14,13 @@ import static org.junit.jupiter.api.Assertions.*;
 class UserStorageTest {
     @Test
     void saveAndLoadTest() {
+        saveAndLoadWithEncryption(new NoEncryption());
+        saveAndLoadWithEncryption(new SimpleXOREncryption("SimpleKey"));
+    }
+
+    void saveAndLoadWithEncryption(EncryptionStrategy encryptionStrategy) {
+        UserStorage storage = new UserStorage(encryptionStrategy);
+
         Set<User> savedUsers = new HashSet<>();
         User john = new User("John", "password");
         savedUsers.add(john);
@@ -21,9 +32,9 @@ class UserStorageTest {
         natwest.withdraw(200);
 
         String filePath = "usersTest.dat";
-        UserStorage.saveUsers(filePath, savedUsers);
+        storage.saveUsers(filePath, savedUsers);
 
-        Set<User> loadedUsers = UserStorage.loadUsers(filePath);
+        Set<User> loadedUsers = storage.loadUsers(filePath);
         assertNotNull(loadedUsers);
         assertFalse(loadedUsers.isEmpty());
         User loadedJohn = loadedUsers.stream().findFirst().get();

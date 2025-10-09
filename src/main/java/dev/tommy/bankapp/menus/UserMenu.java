@@ -121,7 +121,7 @@ public class UserMenu {
         IO.println();
         if (input.equals("DELETE")) {
             IO.println("User '" + user + "' deleted. Returning to main menu.");
-            BankApp.Context.userDatabase.remove(user);
+            BankApp.context.userDatabase.remove(user);
             BankApp.saveUsers();
 
             CLIUtils.pressEnterToContinue();
@@ -178,7 +178,6 @@ public class UserMenu {
                 BankApp.saveUsers();
 
                 CLIUtils.pressEnterToContinue();
-                return;
             }
         }
 
@@ -194,7 +193,7 @@ public class UserMenu {
         if (password == null) return;
 
         User user = new User(username, password);
-        BankApp.Context.userDatabase.add(user);
+        BankApp.context.userDatabase.add(user);
         BankApp.saveUsers();
 
         IO.println();
@@ -208,7 +207,7 @@ public class UserMenu {
         IO.print("Enter username: ");
         String username = CLIUtils.scanner.nextLine();
 
-        if (!BankApp.Context.userDatabase.hasUser(username)) {
+        if (!BankApp.context.userDatabase.hasUser(username)) {
             IO.println("No user with username.");
             CLIUtils.pressEnterToContinue();
             return null;
@@ -217,7 +216,7 @@ public class UserMenu {
         IO.print("Enter password: ");
         String password = CLIUtils.scanner.nextLine();
 
-        User user = BankApp.Context.userDatabase.getUser(username);
+        User user = BankApp.context.userDatabase.getUser(username);
         if (!user.checkPassword(password)) {
             IO.println("Invalid password.");
             CLIUtils.pressEnterToContinue();
@@ -239,7 +238,7 @@ public class UserMenu {
                 return null;
             } else if (username.contains(" ")) {
                 errorMessage = "Username cannot contain spaces.";
-            } else if (BankApp.Context.userDatabase.hasUser(username)) {
+            } else if (BankApp.context.userDatabase.hasUser(username)) {
                 errorMessage = "Username already exists.";
             } else if (username.length() < minCharacters) {
                 errorMessage = "Username must have more than " + minCharacters + " characters.";

@@ -83,9 +83,7 @@ public class BankAccount implements Serializable {
         return this.identifier;
     }
 
-    public void setIdentifier(String identifier) {
-        this.identifier = identifier;
-    }
+    public void setIdentifier(String identifier) { this.identifier = identifier; }
 
     @Override
     public String toString() {

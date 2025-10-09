@@ -66,7 +66,7 @@ public class MainMenu {
 
     private static void printAllUsers() {
         CLIUtils.printTitle("All Users");
-        for (User user : BankApp.Context.userDatabase.users()) {
+        for (User user : BankApp.context.userDatabase.users()) {
             IO.println(user);
         }
 

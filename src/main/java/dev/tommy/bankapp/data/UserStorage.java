@@ -1,13 +1,34 @@
 package dev.tommy.bankapp.data;
 
+import dev.tommy.bankapp.encryption.EncryptionStrategy;
+
 import java.io.*;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.util.HashSet;
 import java.util.Set;
 
 public class UserStorage {
-    public static boolean saveUsers(String filePath, Set<User> users) {
-        try (ObjectOutputStream out = new ObjectOutputStream(new FileOutputStream(filePath))) {
-            out.writeObject(users);
+    private final EncryptionStrategy encryptionStrategy;
+
+    public UserStorage(EncryptionStrategy encryptionStrategy) {
+        this.encryptionStrategy = encryptionStrategy;
+    }
+
+    public boolean saveUsers(String filePath, Set<User> users) {
+        try {
+            // Serialize users to byte array
+            ByteArrayOutputStream baos = new ByteArrayOutputStream();
+            try (ObjectOutputStream out = new ObjectOutputStream(baos)) {
+                out.writeObject(users);
+            }
+
+            // Encrypt serialized bytes
+            byte[] encryptedData = encryptionStrategy.encrypt(baos.toByteArray());
+
+            // Write encrypted data to file
+            Files.write(Paths.get(filePath), encryptedData);
+
             return true;
         } catch (Exception e) {
             IO.println("Failed to save users: " + e.getMessage());
@@ -16,16 +37,26 @@ public class UserStorage {
         return false;
     }
 
-    public static Set<User> loadUsers(String filePath) {
+    public Set<User> loadUsers(String filePath) {
         File file = new File(filePath);
         if (!file.exists()) {
             return new HashSet<>();
         }
 
-        try (ObjectInputStream in = new ObjectInputStream(new FileInputStream(filePath))) {
-            Object obj = in.readObject();
-            if (obj instanceof Set) {
-                return (Set<User>) obj;
+        try {
+            // Read encrypted bytes from file
+            byte[] encryptedData = Files.readAllBytes(Paths.get(filePath));
+
+            // Decrypt bytes
+            byte[] decryptedData = encryptionStrategy.decrypt(encryptedData);
+
+            // Deserialize bytes back to Set<User>
+            ByteArrayInputStream bais = new ByteArrayInputStream(decryptedData);
+            try (ObjectInputStream in = new ObjectInputStream(bais)) {
+                Object obj = in.readObject();
+                if (obj instanceof Set) {
+                    return (Set<User>) obj;
+                }
             }
         } catch (Exception e) {
             IO.println("Failed to load users: " + e.getMessage());

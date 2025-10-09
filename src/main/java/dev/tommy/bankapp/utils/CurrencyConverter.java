@@ -5,7 +5,7 @@ import dev.tommy.bankapp.data.Currency;
 import java.util.HashMap;
 
 public class CurrencyConverter {
-    private static final HashMap<Currency, Double> toUSD = new HashMap<Currency, Double>();
+    private static final HashMap<Currency, Double> toUSD = new HashMap<>();
 
     static {
         toUSD.put(Currency.USD, 1.0);
