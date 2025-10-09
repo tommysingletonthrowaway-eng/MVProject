@@ -58,6 +58,10 @@ A simple **Java command-line banking app** that manages users, their bank accoun
 ### Running the Application
 
 1. Clone the repository
-2. Build the project using your IDE or via Maven:
+2. Navigate to the root directory
+3. Build the project using your IDE or via Maven:
    ```bash
-   mvn clean compile
+   mvn clean package
+4. Run the jar file:
+   ```bash
+    java -jar target/BankApp-1.0-SNAPSHOT.jar    
