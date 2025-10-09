@@ -37,7 +37,8 @@ public class User implements Serializable {
     }
 
     public BankAccount getBankAccount(int index) {
-        return this.bankAccounts.get(index);
+        return (index < 0 || index >= bankAccounts.size())
+                ? null : bankAccounts.get(index);
     }
 
     public BankAccount getBankAccount(String name) {
