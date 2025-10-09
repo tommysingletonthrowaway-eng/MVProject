@@ -1,3 +1,8 @@
+package dev.tommy.bankapp.data;
+
+import dev.tommy.bankapp.utils.BankUtils;
+import dev.tommy.bankapp.utils.CurrencyConverter;
+
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.List;

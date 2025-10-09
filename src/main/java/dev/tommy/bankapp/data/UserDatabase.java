@@ -1,3 +1,5 @@
+package dev.tommy.bankapp.data;
+
 import java.util.Set;
 
 public record UserDatabase(Set<User> users) {

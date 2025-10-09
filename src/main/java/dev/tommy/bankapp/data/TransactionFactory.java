@@ -1,3 +1,5 @@
+package dev.tommy.bankapp.data;
+
 import java.time.LocalDateTime;
 
 public class TransactionFactory {

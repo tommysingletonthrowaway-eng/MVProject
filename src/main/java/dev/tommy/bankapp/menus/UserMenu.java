@@ -1,3 +1,11 @@
+package dev.tommy.bankapp.menus;
+
+import dev.tommy.bankapp.BankApp;
+import dev.tommy.bankapp.data.BankAccount;
+import dev.tommy.bankapp.data.Currency;
+import dev.tommy.bankapp.data.User;
+import dev.tommy.bankapp.utils.CLIUtils;
+
 public class UserMenu {
     public static void showUser(User user) {
         while (true) {

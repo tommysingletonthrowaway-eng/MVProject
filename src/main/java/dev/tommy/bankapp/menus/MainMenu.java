@@ -1,3 +1,9 @@
+package dev.tommy.bankapp.menus;
+
+import dev.tommy.bankapp.BankApp;
+import dev.tommy.bankapp.data.User;
+import dev.tommy.bankapp.utils.CLIUtils;
+
 public class MainMenu {
     public static void mainMenu() {
         while (true) {

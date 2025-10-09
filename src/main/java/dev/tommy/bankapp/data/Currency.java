@@ -1,3 +1,5 @@
+package dev.tommy.bankapp.data;
+
 public enum Currency {
     USD("$"),
     EUR("€"),

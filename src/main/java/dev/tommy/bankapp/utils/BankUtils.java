@@ -1,3 +1,7 @@
+package dev.tommy.bankapp.utils;
+
+import dev.tommy.bankapp.data.Currency;
+
 public class BankUtils {
     public static String formatMoney(double amount, Currency currency) {
         return formatMoney(amount, currency.getSymbol());

@@ -1,3 +1,5 @@
+package dev.tommy.bankapp.data;
+
 import java.io.*;
 import java.util.HashSet;
 import java.util.Set;

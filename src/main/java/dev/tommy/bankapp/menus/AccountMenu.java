@@ -1,3 +1,13 @@
+package dev.tommy.bankapp.menus;
+
+import dev.tommy.bankapp.BankApp;
+import dev.tommy.bankapp.data.BankAccount;
+import dev.tommy.bankapp.data.Currency;
+import dev.tommy.bankapp.data.Transaction;
+import dev.tommy.bankapp.utils.BankUtils;
+import dev.tommy.bankapp.utils.CLIUtils;
+import dev.tommy.bankapp.utils.CurrencyConverter;
+
 public class AccountMenu {
     public static void showMenu(BankAccount account) {
         while (true) {

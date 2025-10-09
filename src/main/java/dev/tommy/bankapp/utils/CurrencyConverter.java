@@ -1,3 +1,7 @@
+package dev.tommy.bankapp.utils;
+
+import dev.tommy.bankapp.data.Currency;
+
 import java.util.HashMap;
 
 public class CurrencyConverter {

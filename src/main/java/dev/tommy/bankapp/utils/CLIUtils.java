@@ -1,3 +1,5 @@
+package dev.tommy.bankapp.utils;
+
 import java.util.Scanner;
 
 public class CLIUtils {
