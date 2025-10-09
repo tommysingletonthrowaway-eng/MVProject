@@ -4,13 +4,9 @@ import java.io.Serial;
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 
 public class User implements Serializable {
-    // TODO:
-    // Understand why this is needed?
-    // It seems Java will auto generate this if needed at compile time
-    // And I don't really understand why it is needed
-    // Especially if it just remains constant
     @Serial
     private static final long serialVersionUID = 1L;
 
@@ -42,6 +38,12 @@ public class User implements Serializable {
 
     public BankAccount getBankAccount(int index) {
         return this.bankAccounts.get(index);
+    }
+
+    public BankAccount getBankAccount(String name) {
+        return this.bankAccounts.stream()
+                .filter(acc -> Objects.equals(acc.getIdentifier(), name))
+                .findFirst().orElse(null);
     }
 
     public List<BankAccount> getBankAccounts() {

@@ -17,7 +17,14 @@ public class CurrencyConverter {
         if (from == to)
             return amount;
 
-        double usdAmount = amount / toUSD.get(from);
-        return usdAmount * toUSD.get(to);
+        return amount * getConversionRate(from, to);
+    }
+
+    public static double getConversionRate(Currency from, Currency to) {
+        return toUSD.get(to) * (1.0 / toUSD.get(from));
+    }
+
+    public static double getToUSD(Currency currency) {
+        return toUSD.get(currency);
     }
 }
