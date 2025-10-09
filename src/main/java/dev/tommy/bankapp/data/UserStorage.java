@@ -5,10 +5,8 @@ import java.util.HashSet;
 import java.util.Set;
 
 public class UserStorage {
-    private static String FILE_PATH = "users.dat";
-
-    public static boolean saveUsers(Set<User> users) {
-        try (ObjectOutputStream out = new ObjectOutputStream(new FileOutputStream(FILE_PATH))) {
+    public static boolean saveUsers(String filePath, Set<User> users) {
+        try (ObjectOutputStream out = new ObjectOutputStream(new FileOutputStream(filePath))) {
             out.writeObject(users);
             return true;
         } catch (Exception e) {
@@ -18,13 +16,13 @@ public class UserStorage {
         return false;
     }
 
-    public static Set<User> loadUsers() {
-        File file = new File(FILE_PATH);
+    public static Set<User> loadUsers(String filePath) {
+        File file = new File(filePath);
         if (!file.exists()) {
             return new HashSet<>();
         }
 
-        try (ObjectInputStream in = new ObjectInputStream(new FileInputStream(FILE_PATH))) {
+        try (ObjectInputStream in = new ObjectInputStream(new FileInputStream(filePath))) {
             Object obj = in.readObject();
             if (obj instanceof Set) {
                 return (Set<User>) obj;

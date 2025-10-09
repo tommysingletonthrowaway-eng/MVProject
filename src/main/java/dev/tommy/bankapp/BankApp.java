@@ -17,6 +17,7 @@ import dev.tommy.bankapp.menus.MainMenu;
 // cant have multiple bank accounts with the same name, cant login with wrong password
 
 public class BankApp {
+    public static final String USERS_FILE_PATH = "users.dat";
     public static AppContext Context;
 
     static void main() {
@@ -25,11 +26,11 @@ public class BankApp {
     }
 
     private static AppContext createAppContext() {
-        Set<User> users = UserStorage.loadUsers();
+        Set<User> users = UserStorage.loadUsers(USERS_FILE_PATH);
         return new AppContext(users);
     }
 
     public static boolean saveUsers() {
-        return UserStorage.saveUsers(BankApp.Context.userDatabase.users());
+        return UserStorage.saveUsers(USERS_FILE_PATH, BankApp.Context.userDatabase.users());
     }
 }
