@@ -1,6 +1,6 @@
 # CLI Banking Application
 
-A simple **Java command-line banking app** that manages users, their bank accounts, and transaction history — all saved using serialization.
+A simple **Java command-line banking app** that manages users, their bank accounts, and transaction history — all saved using encrypted serialization.
 
 ---
 
@@ -25,6 +25,7 @@ A simple **Java command-line banking app** that manages users, their bank accoun
 - **Data persistence**
     - All users, bank accounts, and transactions are serialized and saved to disk
     - Ability to **reset all saved data** from the main menu
+    - Data is encrypted with SimpleXOR encryption
 
 - **Menu system**
     - Intuitive CLI navigation with three menus:
