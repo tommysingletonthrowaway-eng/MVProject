@@ -4,15 +4,21 @@ import java.util.Set;
 
 public record UserDatabase(Set<User> users) {
     public void add(User user) {
-        users.add(user);
+        this.users.add(user);
     }
 
     public void remove(User user) {
-        users.remove(user);
+        this.users.remove(user);
     }
 
     public User getUser(String username) {
-        return users.stream().filter(u -> u.getUsername().equals(username)).findFirst().orElse(null);
+        return this.users.stream()
+                .filter(u -> u.getUsername().equals(username))
+                .findFirst().orElse(null);
+    }
+
+    public void clear() {
+        this.users.clear();
     }
 
     public boolean hasUser(String username) {

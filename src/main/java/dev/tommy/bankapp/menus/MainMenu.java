@@ -12,7 +12,8 @@ public class MainMenu {
             IO.println("1. Login");
             IO.println("2. Signup");
             IO.println("3. List Users");
-            IO.println("4. Exit");
+            IO.println("4. Reset All Data");
+            IO.println("5. Exit");
             IO.println("");
             IO.print("Enter your choice: ");
 
@@ -31,14 +32,36 @@ public class MainMenu {
                 case "3":
                     printAllUsers();
                     break;
-                case "-1":
                 case "4":
+                    promptResetData();
+                    break;
+                case "-1":
+                case "5":
                     onExitProgram();
                     return;
                 default:
                     IO.println("Invalid choice.");
             }
         }
+    }
+
+    private static void promptResetData() {
+        String input;
+
+        CLIUtils.printTitle("Reset All Data");
+        IO.println("Are you sure you want to reset all data?");
+        IO.print("Enter 'RESET' to reset: ");
+        input = CLIUtils.scanner.nextLine();
+        IO.println();
+        if (input.equals("RESET")) {
+            BankApp.resetUsers();
+            IO.println("All data reset.");
+
+            CLIUtils.pressEnterToContinue();
+            return;
+        }
+
+        IO.println("Reset cancelled.");
     }
 
     private static void printAllUsers() {

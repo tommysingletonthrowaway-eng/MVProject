@@ -33,4 +33,9 @@ public class BankApp {
     public static boolean saveUsers() {
         return UserStorage.saveUsers(USERS_FILE_PATH, BankApp.Context.userDatabase.users());
     }
+
+    public static void resetUsers() {
+        BankApp.Context.userDatabase.clear();
+        UserStorage.saveUsers(USERS_FILE_PATH, BankApp.Context.userDatabase.users());
+    }
 }

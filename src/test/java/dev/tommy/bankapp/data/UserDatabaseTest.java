@@ -39,4 +39,15 @@ class UserDatabaseTest {
         uD.add(new User("John", "password"));
         assertTrue(uD.hasUser("John"));
     }
+
+    @Test
+    void clear() {
+        UserDatabase uD = new UserDatabase(new HashSet<>());
+        uD.add(new User("John", "password"));
+        assertTrue(uD.hasUser("John"));
+
+        uD.clear();
+        assertFalse(uD.hasUser("John"));
+        assertTrue(uD.users().isEmpty());
+    }
 }
