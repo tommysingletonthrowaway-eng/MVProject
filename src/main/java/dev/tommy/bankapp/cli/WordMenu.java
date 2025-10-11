@@ -63,7 +63,6 @@ public class WordMenu extends Menu {
         out.println("Available commands:");
 
         int maxLabelLength = getMaxItemLabelLength();
-        out.println("Available commands: ");
         for (MenuItem item : items) {
             String paddedLabel = String.format("%-" + maxLabelLength + "s", item.label());
             out.println("  - " + paddedLabel + " : " + item.description());
