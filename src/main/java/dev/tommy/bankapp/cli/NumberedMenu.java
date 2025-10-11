@@ -5,16 +5,16 @@ import java.io.PrintStream;
 import java.util.InputMismatchException;
 
 public class NumberedMenu extends Menu {
-    public NumberedMenu(String title, InputStream in, PrintStream out) {
-        super(title, in, out);
+    public NumberedMenu(String title, boolean autoExit, InputStream in, PrintStream out) {
+        super(title, autoExit, in, out);
     }
 
     @Override
     public void display() {
         out.println();
-        out.println("===== " + title + " =====");
+        out.println(title);
         for (int i = 0; i < items.size(); i++) {
-            out.println("  " + (i + 1) + ": " + items.get(i));
+            out.println("  " + (i + 1) + ". " + items.get(i));
         }
     }
 
@@ -26,7 +26,7 @@ public class NumberedMenu extends Menu {
         try {
             choice = scanner.nextInt();
         } catch (Exception _) {
-            return MenuOperation.CONTINUE;
+            return autoExit ? MenuOperation.EXIT : MenuOperation.CONTINUE;
         } finally {
             scanner.nextLine();     // Ensure \n is cleared
         }
@@ -38,7 +38,7 @@ public class NumberedMenu extends Menu {
 
         if (choice < 1 || choice > items.size()) {
             out.println("Invalid choice");
-            return MenuOperation.CONTINUE;
+            return autoExit ? MenuOperation.EXIT : MenuOperation.CONTINUE;
         }
 
         MenuItem item = items.get(choice - 1);

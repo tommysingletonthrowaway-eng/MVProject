@@ -1,6 +1,7 @@
 package dev.tommy.bankapp.menus;
 
 import dev.tommy.bankapp.BankApp;
+import dev.tommy.bankapp.cli.*;
 import dev.tommy.bankapp.data.BankAccount;
 import dev.tommy.bankapp.data.Currency;
 import dev.tommy.bankapp.data.User;
@@ -8,91 +9,58 @@ import dev.tommy.bankapp.utils.CLIUtils;
 
 public class UserMenu {
     public static void showUser(User user) {
-        while (true) {
-            CLIUtils.printTitle("Welcome user: " + user.getUsername());
+        String title = CLIUtils.getTitle(user.getUsername());
+        Menu userMenu = new NumberedMenu(title, false, System.in, System.out);
 
-            IO.println(1 + ". Open account");
-            IO.println(2 + ". Create new account");
-            IO.println(3 + ". Change username");
-            IO.println(4 + ". Change password");
-            IO.println(5 + ". Delete account");
-            IO.println(6 + ". Delete user");
-            IO.println(7 + ". Logout");
-
-            IO.println();
-            IO.print("Enter your choice: ");
-
-            String input = CLIUtils.scanner.nextLine();
-            int option;
-            try {
-                option = Integer.parseInt(input);
-            } catch (NumberFormatException e) {
-                IO.println();
-                IO.println("Invalid input.");
-                continue;
-            }
-
-            switch (option) {
-                case 1:
+        userMenu
+                .addItem("Open account", "" , args -> {
                     promptOpenBankAccount(user);
-                    break;
-                case 2:
+                    return MenuOperation.CONTINUE;
+                })
+                .addItem("Create new account", "" , args -> {
                     promptCreateNewAccount(user);
-                    break;
-                case 3:
+                    return MenuOperation.CONTINUE;
+
+                }).addItem("Change username", "" , args -> {
                     promptChangeUsername(user);
-                    break;
-                case 4:
+                    return MenuOperation.CONTINUE;
+
+                }).addItem("Change password", "" , args -> {
                     promptChangePassword(user);
-                    break;
-                case 5:
+                    return MenuOperation.CONTINUE;
+
+                }).addItem("Delete account", "" , args -> {
                     promptDeleteAccount(user);
-                    break;
-                case 6:
+                    return MenuOperation.CONTINUE;
+
+                }).addItem("Delete user", "" , args -> {
                     boolean userDeleted = promptDeleteUser(user);
-                    if (userDeleted) {
-                        return;
-                    }
-                    break;
-                case -1:
-                case 7:
-                    IO.println();
-                    IO.println(user + " logged out.");
-                    return;
-                default:
-                    break;
-            }
-        }
+                    return userDeleted ? MenuOperation.EXIT : MenuOperation.CONTINUE;
+                }).addItem("Logout", "" , args -> {
+                    IO.println("\n"+ user + " logged out.");
+                    return MenuOperation.EXIT;
+                });
+
+        userMenu.run();
     }
 
 
     private static void promptOpenBankAccount(User user) {
-        CLIUtils.printTitle("Open Bank Account");
+        String title = CLIUtils.getTitle("Open Bank Account");
+        Menu openAccountMenu = new NumberedMenu(title, true, System.in, System.out);
 
         var accounts = user.getBankAccounts();
-        for (int i = 0; i < accounts.size(); i++) {
-            IO.println((i + 1) + ". Open account '" + accounts.get(i).getIdentifier() + "'");
+        for (BankAccount account : accounts) {
+            openAccountMenu.addItem("Open account '" + account + "'", "", args -> {
+                AccountMenu.showMenu(account);
+                return MenuOperation.EXIT;
+            });
         }
-        IO.println(accounts.size() + 1 + ". Exit");
-        IO.println();
+        openAccountMenu.addItem("Exit", "", args -> {
+            return MenuOperation.EXIT;
+        });
 
-        IO.print("Enter your choice: ");
-        String input = CLIUtils.scanner.nextLine();
-        int option;
-        try {
-            option = Integer.parseInt(input);
-        } catch (NumberFormatException e) {
-            IO.println();
-            IO.println("Invalid input.");
-            CLIUtils.pressEnterToContinue();
-            return;
-        }
-
-        if (option >= 1 && option <= accounts.size()) {
-            AccountMenu.showMenu(user.getBankAccount(option - 1));
-        } else if (option == accounts.size() + 1 || option == -1) {
-            IO.println();
-        }
+        openAccountMenu.run();
     }
 
     private static void promptChangeUsername(User user) {
@@ -147,41 +115,31 @@ public class UserMenu {
     }
 
     private static void promptDeleteAccount(User user) {
-        CLIUtils.printTitle("Delete Account");
+        String title = CLIUtils.getTitle("Delete Bank Account");
+        Menu deleteAccountMenu = new NumberedMenu(title, true, System.in, System.out);
 
         var accounts = user.getBankAccounts();
-        for (int i = 0; i < accounts.size(); i++) {
-            IO.println((i + 1) + ". Delete account '" + accounts.get(i).getIdentifier() + "'");
+        for (BankAccount account : accounts) {
+            deleteAccountMenu.addItem("Delete account" + account, "", args -> {
+                IO.println("Are you sure you want to delete account " + account + "?");
+                IO.print("Write 'DELETE' to delete: ");
+                String input = CLIUtils.scanner.nextLine();
+                IO.println();
+                if (input.equals("DELETE")) {
+                    IO.println("Account '" + account + "' deleted");
+                    user.deleteBankAccount(account);
+                    BankApp.saveUsers();
+
+                    CLIUtils.pressEnterToContinue();
+                }
+                return MenuOperation.EXIT;
+            });
         }
-        IO.println((accounts.size() + 1) + ". Cancel");
+        deleteAccountMenu.addItem("Exit", "", args -> {
+            return MenuOperation.EXIT;
+        });
 
-        IO.println();
-        IO.print("Select an account to delete: ");
-        String input = CLIUtils.scanner.nextLine();
-        IO.println();
-        int option;
-        try {
-            option = Integer.parseInt(input);
-        } catch (NumberFormatException e) {
-            option = -1;
-        }
-
-        if (option >= 1 && option <= accounts.size()) {
-            BankAccount account = user.getBankAccount(option - 1);
-            IO.println("Are you sure you want to delete account " + account + "?");
-            IO.print("Enter 'DELETE' to delete: ");
-            input = CLIUtils.scanner.nextLine();
-            IO.println();
-            if (input.equals("DELETE")) {
-                IO.println("Account '" + account + "' deleted");
-                user.deleteBankAccount(account);
-                BankApp.saveUsers();
-
-                CLIUtils.pressEnterToContinue();
-            }
-        }
-
-        // IO.println("Cancel account deletion.");
+        deleteAccountMenu.run();
     }
 
     public static void signupUser() {
@@ -302,35 +260,27 @@ public class UserMenu {
     private static void promptCreateNewAccount(User user) {
         String input;
 
-        IO.println();
-        IO.println("=== Create new account ===");
+        CLIUtils.printTitle("Create New Account");
         String accountName = promptNewAccountName(user);
         if (accountName == null) {
             CLIUtils.pressEnterToContinue();
             return;
         }
 
-        IO.println();
-        IO.println("--- Currency Options ---");
+
+        Menu currencyOptionsMenu = new WordMenu("--- Currency Options ---", true, System.in, System.out);
+
         for (Currency currency : Currency.values()) {
-            IO.println("- " + currency.name());
+            currencyOptionsMenu.addItem(currency.name(), currency.getSymbol(), args -> {
+                BankAccount newAccount = new BankAccount(accountName, currency);
+                user.addBankAccount(newAccount);
+                BankApp.saveUsers();
+                IO.println("Account '" + accountName + "' created with currency " + currency);
+                CLIUtils.pressEnterToContinue();
+                return MenuOperation.EXIT;
+            });
         }
 
-        IO.println();
-        IO.print("Choose currency type for new account: ");
-        input = CLIUtils.scanner.nextLine().toUpperCase();
-        IO.println();
-
-        try {
-            Currency currencySelected = Currency.valueOf(input);
-            BankAccount newAccount = new BankAccount(accountName, currencySelected);
-            user.addBankAccount(newAccount);
-            BankApp.saveUsers();
-            IO.println("Account '" + accountName + "' created with currency " + currencySelected);
-            CLIUtils.pressEnterToContinue();
-        } catch (IllegalArgumentException e) {
-            IO.println("Currency invalid. Cancelling account creation.");
-            CLIUtils.pressEnterToContinue();
-        }
+        currencyOptionsMenu.run();
     }
 }

@@ -1,6 +1,9 @@
 package dev.tommy.bankapp.menus;
 
 import dev.tommy.bankapp.BankApp;
+import dev.tommy.bankapp.cli.Menu;
+import dev.tommy.bankapp.cli.MenuOperation;
+import dev.tommy.bankapp.cli.WordMenu;
 import dev.tommy.bankapp.data.BankAccount;
 import dev.tommy.bankapp.data.Currency;
 import dev.tommy.bankapp.data.Transaction;
@@ -8,46 +11,72 @@ import dev.tommy.bankapp.utils.BankUtils;
 import dev.tommy.bankapp.utils.CLIUtils;
 import dev.tommy.bankapp.utils.CurrencyConverter;
 
+import java.util.Optional;
+
 public class AccountMenu {
     public static void showMenu(BankAccount account) {
-        while (true) {
-            CLIUtils.printTitle(account + " - Account Menu");
+        String menuName = CLIUtils.getTitle(account + " - Account Menu");
+        Menu accountMenu = new WordMenu(menuName, false, System.in, System.out);
 
-            IO.println("1. Check balance");
-            IO.println("2. Deposit");
-            IO.println("3. Withdraw");
-            IO.println("4. Change currency");
-            IO.println("5. Show transaction history");
-            IO.println("6. Exit");
-            IO.println();
-
-            IO.print("Enter your choice: ");
-            String input = CLIUtils.scanner.nextLine();
-
-            switch (input) {
-                case "1":
+        accountMenu
+                .addItem("balance", "Check the balance in the account", args -> {
                     printBalance(account);
-                    break;
-                case "2":
-                    promptDeposit(account);
-                    break;
-                case "3":
-                    promptWithdraw(account);
-                    break;
-                case "4":
-                    promptChangeCurrency(account);
-                    break;
-                case "5":
+                    return MenuOperation.CONTINUE;
+                })
+
+                .addItem("deposit", "Deposit an amount into account using 'deposit d' where d is amount", args -> {
+                    Optional<Double> amount = args.tryGetDouble();
+                    amount.ifPresent(aDouble -> promptDeposit(account, aDouble));
+                    return MenuOperation.CONTINUE;
+                })
+
+                .addItem("withdraw", "Withdraw an amount from your account using 'withdraw d' where d is amount", args -> {
+                    Optional<Double> amount = args.tryGetDouble();
+                    amount.ifPresent(aDouble -> promptWithdrawal(account, aDouble));
+                    return MenuOperation.CONTINUE;
+                })
+
+                .addItem("currency", "Show current currency type of the account", args -> {
+                    IO.println("Currency of account is " + account.getCurrency() + ".");
+                    CLIUtils.pressEnterToContinue();
+                    return MenuOperation.CONTINUE;
+                })
+
+                .addItem("setcurrency", "Set currency to different type using 'setcurrency c $b'" +
+                                "\n         c - currency type of '" + BankUtils.getCurrencyList() + "'" +
+                                "\n         $b - optional auto conversion of balance to the new currency type ('y' or 'n')",
+                        args -> {
+                            Optional<String> currencyStr = args.tryGetString();
+                            if (currencyStr.isEmpty()) {
+                                return MenuOperation.CONTINUE;
+                            }
+                            Currency newCurrency = Currency.valueOf(currencyStr.get());
+
+                            Optional<String> autoConvertStr = args.tryGetString();
+                            autoConvertStr.ifPresentOrElse(
+                                    value -> {
+                                        boolean autoConvertFlag = value.equalsIgnoreCase("y");
+                                        promptChangeCurrency(account, newCurrency, autoConvertFlag);
+                                    },
+                                    () -> promptChangeCurrency(account, newCurrency)
+                            );
+
+                            return MenuOperation.CONTINUE;
+                        })
+
+                .addItem("transactions", "Show transaction history of the account", args -> {
                     showTransactionHistory(account);
-                    break;
-                case "-1":
-                case "6":
-                    return;
-                default:
-                    IO.println("Invalid option.");
-            }
-        }
+                    return MenuOperation.CONTINUE;
+                })
+
+                .addItem("logout", "Logout of this bank account", args -> {
+                    IO.println("Logged out of account " + account + ".");
+                    return MenuOperation.EXIT;
+                })
+
+                .run();
     }
+
 
     private static void showTransactionHistory(BankAccount account) {
         CLIUtils.printTitle("Transaction History");
@@ -59,100 +88,64 @@ public class AccountMenu {
         CLIUtils.pressEnterToContinue();
     }
 
-    private static void promptChangeCurrency(BankAccount account) {
-        CLIUtils.printTitle("Change Currency");
-        IO.println();
-        IO.println("--- Currency Options ---");
-        for (Currency currency : Currency.values()) {
-            IO.println("- " + currency.name());
-        }
-
-        IO.println();
-        IO.print("Choose new currency: ");
-        String input = CLIUtils.scanner.nextLine().toUpperCase();
-        IO.print("");
-
+    private static void promptChangeCurrency(BankAccount account, Currency newCurrency) {
         Currency currentCurrency = account.getCurrency();
-        Currency selectedCurrency;
-        try {
-            selectedCurrency = Currency.valueOf(input);
-        } catch (IllegalArgumentException e) {
-            IO.println("Currency invalid. Cancelling currency conversion.");
-            CLIUtils.pressEnterToContinue();
-            return;
-        }
-
         double currentBalance = account.getBalance();
-        double convertedBalance = CurrencyConverter.convert(currentBalance, currentCurrency, selectedCurrency);
+        double convertedBalance = CurrencyConverter.convert(currentBalance, currentCurrency, newCurrency);
         String currentBalanceStr = BankUtils.formatMoney(currentBalance, currentCurrency);
-        String convertedBalanceStr = BankUtils.formatMoney(convertedBalance, selectedCurrency);
+        String convertedBalanceStr = BankUtils.formatMoney(convertedBalance, newCurrency);
 
         IO.println("Do you want to auto convert your bank balance from " + currentBalanceStr + " to " + convertedBalanceStr);
         IO.print("y/n: ");
         boolean shouldConvertBalance = CLIUtils.scanner.nextLine().equalsIgnoreCase("y");
         IO.print("");
 
-        account.setCurrency(selectedCurrency, shouldConvertBalance);
+        promptChangeCurrency(account, newCurrency, shouldConvertBalance);
+    }
+
+    private static void promptChangeCurrency(BankAccount account, Currency newCurrency, boolean autoConvert) {
+        account.setCurrency(newCurrency, autoConvert);
         BankApp.saveUsers();
 
         IO.println();
-        IO.println("Currency updated successfully" + (shouldConvertBalance ? " with balance conversion." : "."));
+        IO.println("Currency updated successfully" + (autoConvert ? " with balance conversion." : "."));
         CLIUtils.pressEnterToContinue();
     }
 
-    private static void promptWithdraw(BankAccount account) {
-        CLIUtils.printTitle("Withdraw");
+    private static void promptWithdrawal(BankAccount account, double amount) {
+        boolean withdrawSuccessful = account.withdraw(amount);
 
-        IO.print("Enter withdrawal amount: ");
-        try {
-            double withdrawalAmount = CLIUtils.scanner.nextDouble();
-            CLIUtils.scanner.nextLine();    // Consume the \n
-            boolean withdrawSuccessful = account.withdraw(withdrawalAmount);
-
-            if (withdrawSuccessful) {
-                BankApp.saveUsers();
-                IO.println("Withdrawn: " + BankUtils.formatMoney(withdrawalAmount, account.getCurrency())
-                        + ". New balance: " + account.getFormattedBalance());
+        if (withdrawSuccessful) {
+            BankApp.saveUsers();
+            IO.println("Withdrawn: " + BankUtils.formatMoney(amount, account.getCurrency())
+                    + ". New balance: " + account.getFormattedBalance());
+        } else {
+            if (account.getBalance() < amount) {
+                IO.println("Withdrawal unsuccessful. Not enough balance for the withdrawal.");
+            } else if (amount < 0) {
+                IO.println("Withdrawal unsuccessful. Cannot withdraw negative amount.");
             } else {
-                if (account.getBalance() < withdrawalAmount) {
-                    IO.println("Withdrawal unsuccessful. Not enough balance for the withdrawal.");
-                } else if (withdrawalAmount < 0) {
-                    IO.println("Withdrawal unsuccessful. Cannot withdraw negative amount.");
-                } else {
-                    IO.println("Withdrawal unsuccessful.");
-                }
+                IO.println("Withdrawal unsuccessful.");
             }
-        } catch (NumberFormatException e) {
-            IO.println("Invalid amount.");
         }
 
         CLIUtils.pressEnterToContinue();
     }
 
-    private static void promptDeposit(BankAccount account) {
-        CLIUtils.printTitle("Deposit");
+    private static void promptDeposit(BankAccount account, double amount) {
+        boolean depositSuccessful = account.deposit(amount);
 
-        IO.print("Enter deposit amount: ");
-        try {
-            double depositAmount = CLIUtils.scanner.nextDouble();
-            CLIUtils.scanner.nextLine();    // Consume the \n
-            boolean depositSuccessful = account.deposit(depositAmount);
-
-            if (depositSuccessful) {
-                BankApp.saveUsers();
-                IO.println("Deposited: " + BankUtils.formatMoney(depositAmount, account.getCurrency())
-                        + ". New balance: " + account.getFormattedBalance());
+        if (depositSuccessful) {
+            BankApp.saveUsers();
+            IO.println("Deposited: " + BankUtils.formatMoney(amount, account.getCurrency())
+                    + ". New balance: " + account.getFormattedBalance());
+        } else {
+            if (amount < 0) {
+                IO.println("Deposit unsuccessful. Cannot withdraw negative amount.");
             } else {
-                if (depositAmount < 0) {
-                    IO.println("Deposit unsuccessful. Cannot withdraw negative amount.");
-                } else {
-                    IO.println("Deposit unsuccessful.");
-                }
+                IO.println("Deposit unsuccessful.");
             }
-        } catch (NumberFormatException e) {
-            IO.println("Invalid amount.");
         }
-
         CLIUtils.pressEnterToContinue();
     }
 

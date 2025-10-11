@@ -1,48 +1,40 @@
 package dev.tommy.bankapp.menus;
 
 import dev.tommy.bankapp.BankApp;
+import dev.tommy.bankapp.cli.Menu;
+import dev.tommy.bankapp.cli.MenuItem;
+import dev.tommy.bankapp.cli.MenuOperation;
+import dev.tommy.bankapp.cli.NumberedMenu;
 import dev.tommy.bankapp.data.User;
 import dev.tommy.bankapp.utils.CLIUtils;
 
 public class MainMenu {
     public static void mainMenu() {
-        while (true) {
-            CLIUtils.printTitle("Bank Management CLI");
+        String title = CLIUtils.getTitle("Bank Management CLI");
+        Menu mainMenu = new NumberedMenu(title, false, System.in, System.out);
 
-            IO.println("1. Login");
-            IO.println("2. Signup");
-            IO.println("3. List Users");
-            IO.println("4. Reset All Data");
-            IO.println("5. Exit");
-            IO.println("");
-            IO.print("Enter your choice: ");
-
-            String input = CLIUtils.scanner.nextLine();
-
-            switch (input) {
-                case "1":
+        mainMenu
+                .addItem("Login", "", args -> {
                     User user = UserMenu.loginUser();
                     if (user != null) {
                         UserMenu.showUser(user);
                     }
-                    break;
-                case "2":
+                    return MenuOperation.CONTINUE;
+                })
+                .addItem("Signup", "", args -> {
                     UserMenu.signupUser();
-                    break;
-                case "3":
+                    return MenuOperation.CONTINUE;
+                }).addItem("List Users", "", args -> {
                     printAllUsers();
-                    break;
-                case "4":
+                    return MenuOperation.CONTINUE;
+                }).addItem("Reset All Data", "", args -> {
                     promptResetData();
-                    break;
-                case "-1":
-                case "5":
-                    onExitProgram();
-                    return;
-                default:
-                    IO.println("Invalid choice.");
-            }
-        }
+                    return MenuOperation.CONTINUE;
+                }).addItem("Exit", "", args -> {
+                    return MenuOperation.EXIT;
+                });
+
+        mainMenu.run();
     }
 
     private static void promptResetData() {

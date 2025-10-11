@@ -9,8 +9,8 @@ public class ArrowMenu extends Menu {
     private boolean firstRender = true;
     private int selectedIndex = 0;
 
-    public ArrowMenu(String title, InputStream in, PrintStream out) {
-        super(title, in, out);
+    public ArrowMenu(String title, boolean autoExit, InputStream in, PrintStream out) {
+        super(title, autoExit, in, out);
     }
 
     @Override
@@ -22,7 +22,7 @@ public class ArrowMenu extends Menu {
         }
 
         out.println();
-        out.println("===== "+ title +" =====");
+        out.println(title);
         for (int i = 0; i < items.size(); i++) {
             out.println((i == selectedIndex ? "  ->" : "    ") + items.get(i));
         }
@@ -48,7 +48,7 @@ public class ArrowMenu extends Menu {
             case UP -> selectedIndex = Math.max(0, selectedIndex - 1);
             case DOWN -> selectedIndex = Math.min(items.size() - 1, selectedIndex + 1);
             case ENTER -> { return items.get(selectedIndex).select(new MenuArguments()); }
-            default -> {}
+            default -> { return autoExit ? MenuOperation.EXIT : MenuOperation.CONTINUE; }
         }
 
         return MenuOperation.CONTINUE;

@@ -11,8 +11,12 @@ public class CLIUtils {
         scanner.nextLine();
     }
 
-    public static void printTitle(String title) {
-        IO.println("\n=== " + title + " ===");
+    public static String getTitle(String str) {
+        return "===== " + str + " =====";
+    }
+
+    public static void printTitle(String str) {
+        IO.println("\n" + getTitle(str));
     }
 
     public static void printSeparator() {

@@ -5,7 +5,6 @@ public enum Currency {
     EUR("€"),
     GBP("£");
 
-    // Same as readonly in C#
     private final String symbol;
 
     Currency(String symbol) {

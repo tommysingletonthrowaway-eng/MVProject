@@ -6,14 +6,14 @@ import java.io.InputStream;
 import java.io.PrintStream;
 
 public class WordMenu extends Menu {
-    public WordMenu(String title, InputStream in, PrintStream out) {
-        super(title, in, out);
+    public WordMenu(String title, boolean autoExit, InputStream in, PrintStream out) {
+        super(title, autoExit, in, out);
     }
 
     @Override
     public void display() {
         out.println();
-        out.println("===== " + title + " =====");
+        out.println(title);
         out.println("Enter your command (use 'help' for a list of commands)");
     }
 
@@ -25,13 +25,13 @@ public class WordMenu extends Menu {
         try {
             line = scanner.nextLine();
         } catch (Exception _) {
-            return MenuOperation.CONTINUE;
+            return autoExit ? MenuOperation.EXIT : MenuOperation.CONTINUE;
         }
 
         String[] args = CLIUtils.getSplitArgs(line);
         if (args.length == 0) {
-            // No input entered, just continue
-            return MenuOperation.CONTINUE;
+            // No input entered
+            return autoExit ? MenuOperation.EXIT : MenuOperation.CONTINUE;
         }
 
         String command = args[0];
@@ -50,15 +50,21 @@ public class WordMenu extends Menu {
             return selectedItem.select(new MenuArguments(commandArgs));
         }
 
-        out.println("Invalid command. Try again.");
-        return MenuOperation.CONTINUE;
+        out.println("Invalid command.");
+        return autoExit ? MenuOperation.EXIT : MenuOperation.CONTINUE;
     }
 
     private void printHelp() {
         out.println();
+
+        out.println();
+        out.println("Available commands:");
+
+        int maxLabelLength = getMaxItemLabelLength();
         out.println("Available commands: ");
         for (MenuItem item : items) {
-            out.println("  - " + item + ": " + item.description());
+            String paddedLabel = String.format("%-" + maxLabelLength + "s", item.label());
+            out.println("  - " + paddedLabel + " : " + item.description());
         }
     }
 
@@ -70,6 +76,13 @@ public class WordMenu extends Menu {
         }
 
         return null;
+    }
+
+    private int getMaxItemLabelLength() {
+        return items.stream()
+                .mapToInt(item -> item.label().length())
+                .max()
+                .orElse(0);
     }
 }
 
