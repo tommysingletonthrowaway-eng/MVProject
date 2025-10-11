@@ -258,15 +258,12 @@ public class UserMenu {
     }
 
     private static void promptCreateNewAccount(User user) {
-        String input;
-
         CLIUtils.printTitle("Create New Account");
         String accountName = promptNewAccountName(user);
         if (accountName == null) {
             CLIUtils.pressEnterToContinue();
             return;
         }
-
 
         Menu currencyOptionsMenu = new WordMenu("--- Currency Options ---", true, System.in, System.out);
 
@@ -280,6 +277,10 @@ public class UserMenu {
                 return MenuOperation.EXIT;
             });
         }
+        currencyOptionsMenu.addItem("Cancel", "", args -> {
+            IO.println("Account creation cancelled.");
+           return MenuOperation.EXIT;
+        });
 
         currencyOptionsMenu.run();
     }
