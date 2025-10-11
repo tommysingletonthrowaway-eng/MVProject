@@ -2,7 +2,6 @@ package dev.tommy.bankapp.menus;
 
 import dev.tommy.bankapp.BankApp;
 import dev.tommy.bankapp.cli.Menu;
-import dev.tommy.bankapp.cli.MenuItem;
 import dev.tommy.bankapp.cli.MenuOperation;
 import dev.tommy.bankapp.cli.NumberedMenu;
 import dev.tommy.bankapp.data.User;

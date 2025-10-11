@@ -1,8 +1,10 @@
 package dev.tommy.bankapp.cli;
 
+import dev.tommy.bankapp.cli.models.MenuArguments;
+import dev.tommy.bankapp.cli.models.MenuItem;
+
 import java.io.InputStream;
 import java.io.PrintStream;
-import java.util.InputMismatchException;
 
 public class NumberedMenu extends Menu {
     public NumberedMenu(String title, boolean autoExit, InputStream in, PrintStream out) {

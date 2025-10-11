@@ -1,5 +1,8 @@
 package dev.tommy.bankapp.cli;
 
+import dev.tommy.bankapp.cli.interfaces.MenuAction;
+import dev.tommy.bankapp.cli.models.MenuItem;
+
 import java.io.InputStream;
 import java.io.PrintStream;
 import java.util.ArrayList;

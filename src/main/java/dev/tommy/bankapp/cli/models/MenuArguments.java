@@ -1,4 +1,4 @@
-package dev.tommy.bankapp.cli;
+package dev.tommy.bankapp.cli.models;
 
 import java.util.Optional;
 
