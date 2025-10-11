@@ -18,7 +18,7 @@ public abstract class Menu {
 
     public Menu(String title, boolean autoExit, InputStream in, PrintStream out) {
         this.title = title;
-        this.autoExit = false;
+        this.autoExit = autoExit;
         this.scanner = new Scanner(in);
         this.out = out;
     }
