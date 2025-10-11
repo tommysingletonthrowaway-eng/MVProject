@@ -1,4 +1,4 @@
-package dev.tommy.bankapp.utils;
+package dev.tommy.bankapp.cli.utils;
 
 import java.io.IOException;
 import java.util.Scanner;

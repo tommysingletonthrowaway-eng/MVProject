@@ -8,7 +8,7 @@ import dev.tommy.bankapp.data.BankAccount;
 import dev.tommy.bankapp.data.Currency;
 import dev.tommy.bankapp.data.Transaction;
 import dev.tommy.bankapp.utils.BankUtils;
-import dev.tommy.bankapp.utils.CLIUtils;
+import dev.tommy.bankapp.cli.utils.CLIUtils;
 import dev.tommy.bankapp.utils.CurrencyConverter;
 
 import java.util.Optional;

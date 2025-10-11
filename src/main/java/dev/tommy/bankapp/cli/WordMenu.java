@@ -2,7 +2,7 @@ package dev.tommy.bankapp.cli;
 
 import dev.tommy.bankapp.cli.models.MenuArguments;
 import dev.tommy.bankapp.cli.models.MenuItem;
-import dev.tommy.bankapp.utils.CLIUtils;
+import dev.tommy.bankapp.cli.utils.CLIUtils;
 
 import java.io.InputStream;
 import java.io.PrintStream;

@@ -5,7 +5,7 @@ import dev.tommy.bankapp.cli.Menu;
 import dev.tommy.bankapp.cli.MenuOperation;
 import dev.tommy.bankapp.cli.NumberedMenu;
 import dev.tommy.bankapp.data.User;
-import dev.tommy.bankapp.utils.CLIUtils;
+import dev.tommy.bankapp.cli.utils.CLIUtils;
 
 public class MainMenu {
     public static void mainMenu() {

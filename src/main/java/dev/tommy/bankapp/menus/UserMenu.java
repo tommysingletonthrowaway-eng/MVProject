@@ -5,7 +5,7 @@ import dev.tommy.bankapp.cli.*;
 import dev.tommy.bankapp.data.BankAccount;
 import dev.tommy.bankapp.data.Currency;
 import dev.tommy.bankapp.data.User;
-import dev.tommy.bankapp.utils.CLIUtils;
+import dev.tommy.bankapp.cli.utils.CLIUtils;
 
 public class UserMenu {
     public static void showUser(User user) {
