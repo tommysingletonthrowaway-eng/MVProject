@@ -8,21 +8,28 @@ import java.util.Scanner;
 
 public abstract class Menu {
     protected String title;
+    protected boolean autoExit;
     protected List<MenuItem> items = new ArrayList<>();
     protected Scanner scanner;
     protected PrintStream out;
 
-    public Menu(String title, InputStream in, PrintStream out) {
+    public Menu(String title, boolean autoExit, InputStream in, PrintStream out) {
         this.title = title;
+        this.autoExit = false;
         this.scanner = new Scanner(in);
         this.out = out;
     }
 
-    public abstract void display();
-    public abstract MenuOperation handleInput();
+    protected abstract void display();
+    protected abstract MenuOperation handleInput();
 
-    public void addItem(MenuItem item) {
+    public Menu addItem(String name, String description, MenuAction action) {
+        return addItem(new MenuItem(name, description, action));
+    }
+
+    public Menu addItem(MenuItem item) {
         items.add(item);
+        return this;
     }
 
     public void run() {
