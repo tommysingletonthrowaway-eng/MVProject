@@ -32,7 +32,7 @@ public class ArrowMenu extends Menu {
     private void moveCursorToTopOfMenu() {
         int linesToMoveUp = items.size() + 2;
         for (int i = 0; i < linesToMoveUp; i++) {
-            System.out.print("\033[F"); // move cursor up one line
+            out.print("\033[F"); // move cursor up one line
         }
     }
 
