@@ -17,26 +17,37 @@ public class UserMenu {
                     promptOpenBankAccount(user);
                     return MenuOperation.CONTINUE;
                 })
+
                 .addItem("Create new account", "" , args -> {
                     promptCreateNewAccount(user);
                     return MenuOperation.CONTINUE;
 
-                }).addItem("Change username", "" , args -> {
+                })
+
+                .addItem("Change username", "" , args -> {
                     promptChangeUsername(user);
                     return MenuOperation.CONTINUE;
 
-                }).addItem("Change password", "" , args -> {
+                })
+
+                .addItem("Change password", "" , args -> {
                     promptChangePassword(user);
                     return MenuOperation.CONTINUE;
 
-                }).addItem("Delete account", "" , args -> {
+                })
+
+                .addItem("Delete account", "" , args -> {
                     promptDeleteAccount(user);
                     return MenuOperation.CONTINUE;
 
-                }).addItem("Delete user", "" , args -> {
+                })
+
+                .addItem("Delete user", "" , args -> {
                     boolean userDeleted = promptDeleteUser(user);
                     return userDeleted ? MenuOperation.EXIT : MenuOperation.CONTINUE;
-                }).addItem("Logout", "" , args -> {
+                })
+
+                .addItem("Logout", "" , args -> {
                     IO.println("\n"+ user + " logged out.");
                     return MenuOperation.EXIT;
                 });

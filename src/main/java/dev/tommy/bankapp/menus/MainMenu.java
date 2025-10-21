@@ -20,16 +20,23 @@ public class MainMenu {
                     }
                     return MenuOperation.CONTINUE;
                 })
+
                 .addItem("Signup", "", args -> {
                     UserMenu.signupUser();
                     return MenuOperation.CONTINUE;
-                }).addItem("List Users", "", args -> {
+                })
+
+                .addItem("List Users", "", args -> {
                     printAllUsers();
                     return MenuOperation.CONTINUE;
-                }).addItem("Reset All Data", "", args -> {
+                })
+
+                .addItem("Reset All Data", "", args -> {
                     promptResetData();
                     return MenuOperation.CONTINUE;
-                }).addItem("Exit", "", args -> {
+                })
+
+                .addItem("Exit", "", args -> {
                     return MenuOperation.EXIT;
                 });
 
