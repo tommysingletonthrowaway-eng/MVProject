@@ -1,6 +1,7 @@
 package dev.tommy.bankapp.cli.utils;
 
 import java.io.IOException;
+import java.util.Optional;
 import java.util.Scanner;
 
 public class CLIUtils {
@@ -9,6 +10,17 @@ public class CLIUtils {
     public static void pressEnterToContinue() {
         IO.println("Press enter to continue...");
         scanner.nextLine();
+    }
+
+    public static Optional<String> promptInput(String prompt) {
+        IO.print(prompt);
+        String input = CLIUtils.scanner.nextLine().trim();
+
+        if (input.isEmpty() || input.equalsIgnoreCase("exit")) {
+            return Optional.empty();
+        }
+
+        return Optional.of(input);
     }
 
     public static String getTitle(String str) {

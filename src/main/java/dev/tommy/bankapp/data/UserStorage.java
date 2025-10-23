@@ -9,13 +9,15 @@ import java.util.HashSet;
 import java.util.Set;
 
 public class UserStorage {
+    private final String filePath;
     private final EncryptionStrategy encryptionStrategy;
 
-    public UserStorage(EncryptionStrategy encryptionStrategy) {
+    public UserStorage(String filePath, EncryptionStrategy encryptionStrategy) {
         this.encryptionStrategy = encryptionStrategy;
+        this.filePath = filePath;
     }
 
-    public boolean saveUsers(String filePath, Set<User> users) {
+    public boolean saveUsers(Set<User> users) {
         try {
             // Serialize users to byte array
             ByteArrayOutputStream baos = new ByteArrayOutputStream();
@@ -37,7 +39,7 @@ public class UserStorage {
         return false;
     }
 
-    public Set<User> loadUsers(String filePath) {
+    public Set<User> loadUsers() {
         File file = new File(filePath);
         if (!file.exists()) {
             return new HashSet<>();

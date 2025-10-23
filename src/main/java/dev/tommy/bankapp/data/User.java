@@ -1,8 +1,12 @@
 package dev.tommy.bankapp.data;
 
+import dev.tommy.bankapp.exceptions.bankaccount.BankAccountNotFoundException;
+import dev.tommy.bankapp.validator.Validator;
+
 import java.io.Serial;
 import java.io.Serializable;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
 
@@ -17,65 +21,83 @@ public class User implements Serializable {
     public User(String username, String password) {
         this.username = username;
         this.password = password;
-        bankAccounts = new ArrayList<>();
+        this.bankAccounts = new ArrayList<>();
     }
+
+    // --- Username and Password ---
 
     public String getUsername() {
         return username;
     }
 
-    public void changePassword(String newPassword) {
-        this.password = newPassword;
-    }
-
-    public void changeUsername(String username) {
-        this.username = username;
+    public void changeUsername(String newUsername) {
+        this.username = newUsername;
     }
 
     public boolean checkPassword(String password) {
         return this.password.equals(password);
     }
 
-    public BankAccount getBankAccount(int index) {
-        return (index < 0 || index >= bankAccounts.size())
-                ? null : bankAccounts.get(index);
+    public boolean validatePassword(Validator validator) {
+        return validator.isValid(password);
     }
 
-    public BankAccount getBankAccount(String name) {
-        return this.bankAccounts.stream()
-                .filter(acc -> Objects.equals(acc.getIdentifier(), name))
-                .findFirst().orElse(null);
+    public void changePassword(String newPassword) {
+        this.password = newPassword;
     }
+
+    // --- Bank Accounts ---
 
     public List<BankAccount> getBankAccounts() {
-        return this.bankAccounts;
+        return Collections.unmodifiableList(bankAccounts);
     }
 
-    public void addBankAccount(BankAccount bankAccount) {
-        bankAccounts.add(bankAccount);
+    public void addBankAccount(BankAccount account) {
+        this.bankAccounts.add(account);
     }
 
-//    public boolean hasAccountNamed(String accountName) {
-//        for (BankAccount bankAccount : this.bankAccounts) {
-//            if (bankAccount.getIdentifier().equals(accountName)) {
-//                return true;
-//            }
-//        }
-//
-//        return false;
-//    }
+    public void removeBankAccount(BankAccount account) throws BankAccountNotFoundException {
+        if (!bankAccounts.contains(account)) {
+            throw new BankAccountNotFoundException(account.getIdentifier());
+        }
+        this.bankAccounts.remove(account);
+    }
+
+    public BankAccount getBankAccount(int index) throws BankAccountNotFoundException {
+        if (index < 0 || index >= bankAccounts.size()) {
+            throw new BankAccountNotFoundException("No account exists at index " + index);
+        }
+        return bankAccounts.get(index);
+    }
+
+    public BankAccount getBankAccount(String name) throws BankAccountNotFoundException {
+        return bankAccounts.stream()
+                .filter(acc -> Objects.equals(acc.getIdentifier(), name))
+                .findFirst()
+                .orElseThrow(() -> new BankAccountNotFoundException(name));
+    }
 
     public boolean hasAccountNamed(String accountName) {
-        return this.getBankAccounts().stream()
-                .anyMatch(bankAccount -> bankAccount.getIdentifier().equals(accountName));
+        return bankAccounts.stream()
+                .anyMatch(acc -> Objects.equals(acc.getIdentifier(), accountName));
     }
 
-    public void deleteBankAccount(BankAccount account) {
-        this.bankAccounts.remove(account);
+    // --- Equality based on username ---
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (!(o instanceof User user)) return false;
+        return Objects.equals(username, user.username);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(username);
     }
 
     @Override
     public String toString() {
-        return getUsername();
+        return username;
     }
 }

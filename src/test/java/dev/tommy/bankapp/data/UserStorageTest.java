@@ -3,9 +3,9 @@ package dev.tommy.bankapp.data;
 import dev.tommy.bankapp.encryption.EncryptionStrategy;
 import dev.tommy.bankapp.encryption.NoEncryption;
 import dev.tommy.bankapp.encryption.SimpleXOREncryption;
+import dev.tommy.bankapp.exceptions.bankaccount.BankAccountNotFoundException;
 import org.junit.jupiter.api.Test;
 
-import javax.security.auth.kerberos.EncryptionKey;
 import java.util.HashSet;
 import java.util.Set;
 
@@ -19,7 +19,8 @@ class UserStorageTest {
     }
 
     void saveAndLoadWithEncryption(EncryptionStrategy encryptionStrategy) {
-        UserStorage storage = new UserStorage(encryptionStrategy);
+        String filePath = "usersTest.dat";
+        UserStorage storage = new UserStorage(filePath, encryptionStrategy);
 
         Set<User> savedUsers = new HashSet<>();
         User john = new User("John", "password");
@@ -31,10 +32,9 @@ class UserStorageTest {
         natwest.deposit(1000);
         natwest.withdraw(200);
 
-        String filePath = "usersTest.dat";
-        storage.saveUsers(filePath, savedUsers);
+        storage.saveUsers(savedUsers);
 
-        Set<User> loadedUsers = storage.loadUsers(filePath);
+        Set<User> loadedUsers = storage.loadUsers();
         assertNotNull(loadedUsers);
         assertFalse(loadedUsers.isEmpty());
         User loadedJohn = loadedUsers.stream().findFirst().get();
@@ -42,7 +42,12 @@ class UserStorageTest {
         assertEquals(loadedJohn.getUsername(), john.getUsername());
         assertTrue(loadedJohn.checkPassword("password"));
         assertTrue(loadedJohn.hasAccountNamed("Natwest"));
-        BankAccount loadedBankAccount = loadedJohn.getBankAccount(0);
+        BankAccount loadedBankAccount = null;
+        try {
+            loadedBankAccount = loadedJohn.getBankAccount(0);
+        } catch (BankAccountNotFoundException e) {
+            fail();
+        }
         assertEquals(800, loadedBankAccount.getBalance());
         assertEquals(Currency.GBP, loadedBankAccount.getCurrency());
         assertFalse(loadedBankAccount.getTransactionHistory().isEmpty());

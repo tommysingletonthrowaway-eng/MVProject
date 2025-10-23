@@ -52,7 +52,7 @@ public class MainMenu {
         input = CLIUtils.scanner.nextLine();
         IO.println();
         if (input.equals("RESET")) {
-            BankApp.resetUsers();
+            BankApp.context.resetUsers();
             IO.println("All data reset.");
 
             CLIUtils.pressEnterToContinue();
@@ -64,7 +64,7 @@ public class MainMenu {
 
     private static void printAllUsers() {
         CLIUtils.printTitle("All Users");
-        for (User user : BankApp.context.userDatabase.users()) {
+        for (User user : BankApp.context.userService.users()) {
             IO.println("- " + user);
         }
 
@@ -74,7 +74,7 @@ public class MainMenu {
     private static void onExitProgram() {
         CLIUtils.printTitle("Exiting Program");
 
-        boolean saved = BankApp.saveUsers();
+        boolean saved = BankApp.context.saveUsers();
         if (!saved) {
             IO.println("Users could not be saved.");
         }

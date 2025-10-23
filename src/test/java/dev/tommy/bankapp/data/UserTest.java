@@ -1,5 +1,6 @@
 package dev.tommy.bankapp.data;
 
+import dev.tommy.bankapp.exceptions.bankaccount.BankAccountNotFoundException;
 import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -50,10 +51,25 @@ class UserTest {
         BankAccount bankAccount = new BankAccount("Natwest", Currency.GBP);
         user.addBankAccount(bankAccount);
 
-        assertEquals(bankAccount, user.getBankAccount("Natwest"));
-        assertNull(user.getBankAccount("HSBC"));
-        assertEquals(bankAccount, user.getBankAccount(0));
-        assertNull(user.getBankAccount(3));
+        try {
+            assertEquals(bankAccount, user.getBankAccount("Natwest"));
+        } catch (BankAccountNotFoundException e) {
+            fail();
+        }
+
+        try {
+            assertNull(user.getBankAccount("HSBC"));
+        } catch (BankAccountNotFoundException _) { }
+
+        try {
+            assertEquals(bankAccount, user.getBankAccount(0));
+        } catch (BankAccountNotFoundException e) {
+            fail();
+        }
+
+        try {
+            assertNull(user.getBankAccount(3));
+        } catch (BankAccountNotFoundException _) { }
     }
 
     @Test
@@ -103,7 +119,11 @@ class UserTest {
         user.addBankAccount(bankAccount);
 
         assertTrue(user.hasAccountNamed("Natwest"));
-        user.deleteBankAccount(bankAccount);
+        try {
+            user.removeBankAccount(bankAccount);
+        } catch (BankAccountNotFoundException e) {
+            fail();
+        }
         assertFalse(user.hasAccountNamed("Natwest"));
     }
 }

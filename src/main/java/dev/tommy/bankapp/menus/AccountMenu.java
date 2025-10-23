@@ -105,7 +105,7 @@ public class AccountMenu {
 
     private static void promptChangeCurrency(BankAccount account, Currency newCurrency, boolean autoConvert) {
         account.setCurrency(newCurrency, autoConvert);
-        BankApp.saveUsers();
+        BankApp.context.saveUsers();
 
         IO.println();
         IO.println("Currency updated successfully" + (autoConvert ? " with balance conversion." : "."));
@@ -116,7 +116,7 @@ public class AccountMenu {
         boolean withdrawSuccessful = account.withdraw(amount);
 
         if (withdrawSuccessful) {
-            BankApp.saveUsers();
+            BankApp.context.saveUsers();
             IO.println("Withdrawn: " + BankUtils.formatMoney(amount, account.getCurrency())
                     + ". New balance: " + account.getFormattedBalance());
         } else {
@@ -136,7 +136,7 @@ public class AccountMenu {
         boolean depositSuccessful = account.deposit(amount);
 
         if (depositSuccessful) {
-            BankApp.saveUsers();
+            BankApp.context.saveUsers();
             IO.println("Deposited: " + BankUtils.formatMoney(amount, account.getCurrency())
                     + ". New balance: " + account.getFormattedBalance());
         } else {

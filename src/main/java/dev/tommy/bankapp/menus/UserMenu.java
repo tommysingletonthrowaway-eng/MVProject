@@ -6,6 +6,11 @@ import dev.tommy.bankapp.data.BankAccount;
 import dev.tommy.bankapp.data.Currency;
 import dev.tommy.bankapp.data.User;
 import dev.tommy.bankapp.cli.utils.CLIUtils;
+import dev.tommy.bankapp.exceptions.account.AccountNotFoundException;
+import dev.tommy.bankapp.exceptions.bankaccount.BankAccountNotFoundException;
+import dev.tommy.bankapp.exceptions.user.*;
+
+import java.util.Optional;
 
 public class UserMenu {
     public static void showUser(User user) {
@@ -13,48 +18,47 @@ public class UserMenu {
         Menu userMenu = new NumberedMenu(title, false, System.in, System.out);
 
         userMenu
-                .addItem("Open account", "" , args -> {
+                .addItem("Open account", "", args -> {
                     promptOpenBankAccount(user);
                     return MenuOperation.CONTINUE;
                 })
 
-                .addItem("Create new account", "" , args -> {
+                .addItem("Create new account", "", args -> {
                     promptCreateNewAccount(user);
                     return MenuOperation.CONTINUE;
 
                 })
 
-                .addItem("Change username", "" , args -> {
+                .addItem("Change username", "", args -> {
                     promptChangeUsername(user);
                     return MenuOperation.CONTINUE;
 
                 })
 
-                .addItem("Change password", "" , args -> {
+                .addItem("Change password", "", args -> {
                     promptChangePassword(user);
                     return MenuOperation.CONTINUE;
 
                 })
 
-                .addItem("Delete account", "" , args -> {
+                .addItem("Delete account", "", args -> {
                     promptDeleteAccount(user);
                     return MenuOperation.CONTINUE;
 
                 })
 
-                .addItem("Delete user", "" , args -> {
+                .addItem("Delete user", "", args -> {
                     boolean userDeleted = promptDeleteUser(user);
                     return userDeleted ? MenuOperation.EXIT : MenuOperation.CONTINUE;
                 })
 
-                .addItem("Logout", "" , args -> {
-                    IO.println("\n"+ user + " logged out.");
+                .addItem("Logout", "", args -> {
+                    IO.println("\n" + user + " logged out.");
                     return MenuOperation.EXIT;
                 });
 
         userMenu.run();
     }
-
 
     private static void promptOpenBankAccount(User user) {
         String title = CLIUtils.getTitle("Open Bank Account");
@@ -78,16 +82,25 @@ public class UserMenu {
         CLIUtils.printTitle("Change Account Username");
 
         String startUsername = user.getUsername();
-        String username = promptUsername();
-        if (username == null) {
-            return;
+
+        while (true) {
+            Optional<String> username = CLIUtils.promptInput("Enter username or type 'exit' to exit: ");
+
+            if (username.isEmpty()) {
+                IO.println("Username change cancelled.");
+                return;
+            }
+
+            try {
+                BankApp.context.userService.changeUserUsername(user, username.get());
+                BankApp.context.saveUsers();
+                IO.println("Username changed successfully from " + startUsername + " to " + user + ".");
+                CLIUtils.pressEnterToContinue();
+                return;
+            } catch (UserException e) {
+                IO.println("Error: " + e.getMessage());
+            }
         }
-
-        user.changeUsername(username);
-        BankApp.saveUsers();
-        IO.println("Username changed successfully from " + startUsername + " to " + user + ".");
-
-        CLIUtils.pressEnterToContinue();
     }
 
     private static boolean promptDeleteUser(User user) {
@@ -99,9 +112,13 @@ public class UserMenu {
 
         IO.println();
         if (input.equals("DELETE")) {
-            IO.println("User '" + user + "' deleted. Returning to main menu.");
-            BankApp.context.userDatabase.remove(user);
-            BankApp.saveUsers();
+            try {
+                BankApp.context.userService.removeUser(user);
+                IO.println("User '" + user + "' deleted. Returning to main menu.");
+            } catch (UserNotFoundException e) {
+                IO.println("User '" + user + "' was not in the database to be deleted. Returning to main menu.");
+            }
+            BankApp.context.saveUsers();
 
             CLIUtils.pressEnterToContinue();
             return true;
@@ -113,13 +130,14 @@ public class UserMenu {
     private static void promptChangePassword(User user) {
         CLIUtils.printTitle("Change Account Password");
 
-        String password = promptPassword();
-        if (password == null) {
+        Optional<String> password = CLIUtils.promptInput("Enter password or type 'exit' to exit: ");
+        if (password.isEmpty()) {
+            IO.println("Password change cancelled..");
             return;
         }
 
-        user.changePassword(password);
-        BankApp.saveUsers();
+        user.changePassword(password.get());
+        BankApp.context.saveUsers();
         IO.println("User password changed successfully.");
 
         CLIUtils.pressEnterToContinue();
@@ -138,8 +156,12 @@ public class UserMenu {
                 IO.println();
                 if (input.equals("DELETE")) {
                     IO.println("Account '" + account + "' deleted");
-                    user.deleteBankAccount(account);
-                    BankApp.saveUsers();
+                    try {
+                        user.removeBankAccount(account);
+                    } catch (BankAccountNotFoundException e) {
+                        IO.println("Bank account '" + account + "' was not found. Cannot delete.");
+                    }
+                    BankApp.context.saveUsers();
 
                     CLIUtils.pressEnterToContinue();
                 }
@@ -156,14 +178,19 @@ public class UserMenu {
     public static void signupUser() {
         CLIUtils.printTitle("Signup User");
 
-        String username = promptUsername();
-        if (username == null) return;
-        String password = promptPassword();
-        if (password == null) return;
+        Optional<String> username = CLIUtils.promptInput("Enter username or type 'exit' to exit: ");
+        if (username.isEmpty()) return;
+        Optional<String> password = CLIUtils.promptInput("Enter password or type 'exit' to exit: ");
+        if (password.isEmpty()) return;
 
-        User user = new User(username, password);
-        BankApp.context.userDatabase.add(user);
-        BankApp.saveUsers();
+        try {
+            BankApp.context.userService.registerUser(username.get(), password.get());
+        } catch (InvalidUsernameException | InvalidPasswordException | DuplicateUserException e) {
+            IO.println("Could not sign up: " + e.getMessage());
+            CLIUtils.pressEnterToContinue();
+            return;
+        }
+        BankApp.context.saveUsers();
 
         IO.println();
         IO.println("User created of username: " + username);
@@ -176,7 +203,10 @@ public class UserMenu {
         IO.print("Enter username: ");
         String username = CLIUtils.scanner.nextLine();
 
-        if (!BankApp.context.userDatabase.hasUser(username)) {
+        User user;
+        try {
+            user = BankApp.context.userService.getUserByUsername(username);
+        } catch (UserNotFoundException e) {
             IO.println("No user with username.");
             CLIUtils.pressEnterToContinue();
             return null;
@@ -185,7 +215,6 @@ public class UserMenu {
         IO.print("Enter password: ");
         String password = CLIUtils.scanner.nextLine();
 
-        User user = BankApp.context.userDatabase.getUser(username);
         if (!user.checkPassword(password)) {
             IO.println("Invalid password.");
             CLIUtils.pressEnterToContinue();
@@ -195,83 +224,10 @@ public class UserMenu {
         return user;
     }
 
-    private static String promptUsername() {
-        while (true) {
-            IO.print("Enter username or type 'exit' to exit: ");
-            String username = CLIUtils.scanner.nextLine();
-            String errorMessage;
-            int maxCharacters = 15;
-            int minCharacters = 3;
-
-            if (username.equalsIgnoreCase("exit")) {
-                return null;
-            } else if (username.contains(" ")) {
-                errorMessage = "Username cannot contain spaces.";
-            } else if (BankApp.context.userDatabase.hasUser(username)) {
-                errorMessage = "Username already exists.";
-            } else if (username.length() < minCharacters) {
-                errorMessage = "Username must have more than " + minCharacters + " characters.";
-            } else if (username.length() > maxCharacters) {
-                errorMessage = "Username must have less than " + maxCharacters + " characters.";
-            } else {
-                return username;
-            }
-
-            IO.println(errorMessage);
-        }
-    }
-
-    private static String promptPassword() {
-        while (true) {
-            IO.print("Enter password or type 'exit' to exit: ");
-            String password = CLIUtils.scanner.nextLine();
-            String errorMessage;
-            int maxCharacters = 15;
-            int minCharacters = 3;
-
-            if (password.equalsIgnoreCase("exit")) {
-                return null;
-            } else if (password.contains(" ")) {
-                errorMessage = "Password cannot contain spaces.";
-            } else if (password.length() < minCharacters) {
-                errorMessage = "Password must have more than " + minCharacters + " characters.";
-            } else if (password.length() > maxCharacters) {
-                errorMessage = "Password must have less than " + maxCharacters + " characters.";
-            } else {
-                return password;
-            }
-
-            IO.println(errorMessage);
-        }
-    }
-
-    private static String promptNewAccountName(User user) {
-        IO.print("Choose name for new account: ");
-        String accountName = CLIUtils.scanner.nextLine();
-        String errorMessage;
-        int maxCharacters = 15;
-        int minCharacters = 3;
-
-        if (accountName.contains(" ")) {
-            errorMessage = "Account name cannot contain spaces.";
-        } else if (accountName.length() < minCharacters) {
-            errorMessage = "Account name must have more than " + minCharacters + " characters.";
-        } else if (accountName.length() > maxCharacters) {
-            errorMessage = "Account name must have less than " + maxCharacters + " characters.";
-        } else if (user.hasAccountNamed(accountName)) {
-            errorMessage = "Account name must have less than " + maxCharacters + " characters.";
-        } else {
-            return accountName;
-        }
-
-        IO.println(errorMessage);
-        return null;
-    }
-
     private static void promptCreateNewAccount(User user) {
         CLIUtils.printTitle("Create New Account");
-        String accountName = promptNewAccountName(user);
-        if (accountName == null) {
+        Optional<String> accountName = CLIUtils.promptInput("Enter new account name or type 'exit' to exit: ");
+        if (accountName.isEmpty()) {
             CLIUtils.pressEnterToContinue();
             return;
         }
@@ -280,9 +236,9 @@ public class UserMenu {
 
         for (Currency currency : Currency.values()) {
             currencyOptionsMenu.addItem(currency.name(), currency.getSymbol(), args -> {
-                BankAccount newAccount = new BankAccount(accountName, currency);
+                BankAccount newAccount = new BankAccount(accountName.get(), currency);
                 user.addBankAccount(newAccount);
-                BankApp.saveUsers();
+                BankApp.context.saveUsers();
                 IO.println("Account '" + accountName + "' created with currency " + currency);
                 CLIUtils.pressEnterToContinue();
                 return MenuOperation.EXIT;
@@ -290,7 +246,7 @@ public class UserMenu {
         }
         currencyOptionsMenu.addItem("Cancel", "", args -> {
             IO.println("Account creation cancelled.");
-           return MenuOperation.EXIT;
+            return MenuOperation.EXIT;
         });
 
         currencyOptionsMenu.run();
