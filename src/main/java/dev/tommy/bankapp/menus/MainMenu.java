@@ -37,6 +37,9 @@ public class MainMenu {
                 })
 
                 .addItem("Exit", "", args -> {
+                    IO.println();
+                    IO.println("Thank you for using Bank Management CLI!");
+                    IO.println("See you next time!");
                     return MenuOperation.EXIT;
                 });
 
