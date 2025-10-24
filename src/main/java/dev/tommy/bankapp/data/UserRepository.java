@@ -14,7 +14,7 @@ public class UserRepository {
     }
 
     public UserRepository(Set<User> users) {
-        this.users = users;
+        this.users = new HashSet<>(users);;
     }
 
     public void add(User user) {
