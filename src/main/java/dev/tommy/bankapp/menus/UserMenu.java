@@ -6,7 +6,6 @@ import dev.tommy.bankapp.data.BankAccount;
 import dev.tommy.bankapp.data.Currency;
 import dev.tommy.bankapp.data.User;
 import dev.tommy.bankapp.cli.utils.CLIUtils;
-import dev.tommy.bankapp.exceptions.account.AccountNotFoundException;
 import dev.tommy.bankapp.exceptions.bankaccount.BankAccountNotFoundException;
 import dev.tommy.bankapp.exceptions.user.*;
 
@@ -193,7 +192,7 @@ public class UserMenu {
         BankApp.context.saveUsers();
 
         IO.println();
-        IO.println("User created of username: " + username);
+        IO.println("User created of username: " + username.get());
 
         CLIUtils.pressEnterToContinue();
     }
@@ -239,7 +238,7 @@ public class UserMenu {
                 BankAccount newAccount = new BankAccount(accountName.get(), currency);
                 user.addBankAccount(newAccount);
                 BankApp.context.saveUsers();
-                IO.println("Account '" + accountName + "' created with currency " + currency);
+                IO.println("Account '" + accountName.get() + "' created with currency " + currency);
                 CLIUtils.pressEnterToContinue();
                 return MenuOperation.EXIT;
             });
