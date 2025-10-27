@@ -1,6 +1,7 @@
 package dev.tommy.bankapp.menus;
 
 import dev.tommy.bankapp.BankApp;
+import dev.tommy.bankapp.cli.ArgumentParseException;
 import dev.tommy.bankapp.cli.Menu;
 import dev.tommy.bankapp.cli.MenuOperation;
 import dev.tommy.bankapp.cli.WordMenu;
@@ -11,6 +12,8 @@ import dev.tommy.bankapp.utils.BankUtils;
 import dev.tommy.bankapp.cli.utils.CLIUtils;
 import dev.tommy.bankapp.utils.CurrencyConverter;
 
+import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.Optional;
 
 public class AccountMenu {
@@ -64,8 +67,31 @@ public class AccountMenu {
                             return MenuOperation.CONTINUE;
                         })
 
-                .addItem("transactions", "Show transaction history of the account", args -> {
-                    showTransactionHistory(account);
+                .addItem("transactions",
+                        """
+                                View your transaction history.
+                                         Usage: 'transactions [-s startDateTime] [-e endDateTime]'
+                                                  -s startDateTime : optional start filter, format 'yyyy-MM-dd' or 'yyyy-MM-dd HH:mm:ss'
+                                                  -e endDateTime   : optional end filter, format 'yyyy-MM-dd' or 'yyyy-MM-dd HH:mm:ss'
+                                         Examples:
+                                                  transactions                     # shows all transactions
+                                                  transactions -s 2025-10-27       # shows transactions from 2025-10-27 00:00:00
+                                                  transactions -s 2025-10-27 10:00:00 -e 2025-10-27 15:00:00  # filters by datetime range""", args -> {
+                    Optional<LocalDateTime> startTime = Optional.empty();
+                    try {
+                        startTime = args.tryGetOptionalDateTimeArgument("-s", true);
+                    } catch (ArgumentParseException e) {
+                        IO.println("Start date-time could not be parsed. Will default to max start date. " + e.getMessage());
+                    }
+
+                    Optional<LocalDateTime> endTime = Optional.empty();
+                    try {
+                        endTime = args.tryGetOptionalDateTimeArgument("-e", false);
+                    } catch (ArgumentParseException e) {
+                        IO.println("End date-time could not be parsed. Will default to max start date. " + e.getMessage());
+                    }
+
+                    showTransactionHistory(account, startTime.orElse(null), endTime.orElse(null));
                     return MenuOperation.CONTINUE;
                 })
 
@@ -78,11 +104,16 @@ public class AccountMenu {
     }
 
 
-    private static void showTransactionHistory(BankAccount account) {
-        CLIUtils.printTitle("Transaction History");
+    private static void showTransactionHistory(BankAccount account, LocalDateTime startTime, LocalDateTime endTime) {
+        CLIUtils.printTitle("Transaction History: ");
 
-        for (Transaction transaction : account.getTransactionHistory()) {
-            IO.println("    " + transaction);
+        var filteredHistory = account.filterTransactionsByDateTime(startTime, endTime);
+        if (filteredHistory.isEmpty()) {
+            IO.println("No transaction history found for time period.");
+        } else {
+            for (var transactionEntry : account.filterTransactionsByDateTime(startTime, endTime)) {
+                IO.println("    " + transactionEntry.getValue());
+            }
         }
 
         CLIUtils.pressEnterToContinue();

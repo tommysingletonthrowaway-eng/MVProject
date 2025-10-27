@@ -5,6 +5,7 @@ import dev.tommy.bankapp.encryption.EncryptionStrategy;
 import java.io.*;
 import java.nio.file.Files;
 import java.nio.file.Paths;
+import java.util.Collection;
 import java.util.HashSet;
 import java.util.Set;
 
@@ -17,7 +18,7 @@ public class UserStorage {
         this.filePath = filePath;
     }
 
-    public boolean saveUsers(Set<User> users) {
+    public boolean saveUsers(Collection<User> users) {
         try {
             // Serialize users to byte array
             ByteArrayOutputStream baos = new ByteArrayOutputStream();
@@ -39,7 +40,7 @@ public class UserStorage {
         return false;
     }
 
-    public Set<User> loadUsers() {
+    public Collection<User> loadUsers() {
         File file = new File(filePath);
         if (!file.exists()) {
             return new HashSet<>();
@@ -56,8 +57,8 @@ public class UserStorage {
             ByteArrayInputStream bais = new ByteArrayInputStream(decryptedData);
             try (ObjectInputStream in = new ObjectInputStream(bais)) {
                 Object obj = in.readObject();
-                if (obj instanceof Set) {
-                    return (Set<User>) obj;
+                if (obj instanceof Collection) {
+                    return (Collection<User>) obj;
                 }
             }
         } catch (Exception e) {

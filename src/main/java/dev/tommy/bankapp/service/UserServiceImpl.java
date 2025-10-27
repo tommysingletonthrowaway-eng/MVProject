@@ -8,6 +8,7 @@ import dev.tommy.bankapp.exceptions.user.InvalidUsernameException;
 import dev.tommy.bankapp.exceptions.user.UserNotFoundException;
 import dev.tommy.bankapp.validator.Validator;
 
+import java.util.Collection;
 import java.util.Set;
 
 public class UserServiceImpl implements UserService {
@@ -89,7 +90,7 @@ public class UserServiceImpl implements UserService {
     }
 
     @Override
-    public Set<User> users() {
+    public Collection<User> users() {
         return userRepository.getAllUsers();
     }
 

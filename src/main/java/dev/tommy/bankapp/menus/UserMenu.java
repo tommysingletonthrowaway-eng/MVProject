@@ -200,7 +200,7 @@ public class UserMenu {
     public static User loginUser() {
         CLIUtils.printTitle("Login User");
         IO.print("Enter username: ");
-        String username = CLIUtils.scanner.nextLine();
+        String username = CLIUtils.scanner.nextLine().trim();
 
         User user;
         try {
@@ -212,7 +212,7 @@ public class UserMenu {
         }
 
         IO.print("Enter password: ");
-        String password = CLIUtils.scanner.nextLine();
+        String password = CLIUtils.scanner.nextLine().trim();
 
         if (!user.checkPassword(password)) {
             IO.println("Invalid password.");

@@ -6,6 +6,7 @@ import dev.tommy.bankapp.exceptions.user.InvalidPasswordException;
 import dev.tommy.bankapp.exceptions.user.InvalidUsernameException;
 import dev.tommy.bankapp.exceptions.user.UserNotFoundException;
 
+import java.util.Collection;
 import java.util.Set;
 
 public interface UserService {
@@ -24,7 +25,7 @@ public interface UserService {
 
     void changeUserPassword(User user, String newPassword) throws InvalidPasswordException;
 
-    Set<User> users();
+    Collection<User> users();
 
     void clear();
 }

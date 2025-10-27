@@ -2,35 +2,36 @@ package dev.tommy.bankapp.data;
 
 import dev.tommy.bankapp.exceptions.user.UserNotFoundException;
 
-import java.util.HashSet;
-import java.util.Optional;
-import java.util.Set;
+import java.util.*;
+import java.util.stream.Collectors;
 
 public class UserRepository {
-    private final Set<User> users;
+    private final Map<String, User> users;
 
     public UserRepository() {
-        this.users = new HashSet<>();
+        this.users = new HashMap<>();
     }
 
-    public UserRepository(Set<User> users) {
-        this.users = new HashSet<>(users);;
+    public UserRepository(Collection<User> users) {
+        this.users = users.stream()
+                .collect(Collectors.toMap(
+                        User::getUsername, // key
+                        user -> user       // value
+                ));
     }
 
     public void add(User user) {
-        users.add(user);
+        users.put(user.getUsername(), user);
     }
 
     public void remove(User user) throws UserNotFoundException {
-        if (!users.remove(user)) {
+        if (users.remove(user.getUsername()) == null) {
             throw new UserNotFoundException(user.getUsername());
         }
     }
 
     public Optional<User> findByUsername(String username) {
-        return users.stream()
-                .filter(u -> u.getUsername().equals(username))
-                .findFirst();
+        return Optional.ofNullable(users.get(username));
     }
 
     public boolean existsByUsername(String username) {
@@ -41,7 +42,7 @@ public class UserRepository {
         users.clear();
     }
 
-    public Set<User> getAllUsers() {
-        return Set.copyOf(users);
+    public Collection<User> getAllUsers() {
+        return List.copyOf(users.values());
     }
 }

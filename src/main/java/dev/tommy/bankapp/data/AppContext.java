@@ -10,6 +10,7 @@ import dev.tommy.bankapp.validator.PasswordValidator;
 import dev.tommy.bankapp.validator.UsernameValidator;
 import dev.tommy.bankapp.validator.Validator;
 
+import java.util.Collection;
 import java.util.Set;
 
 public class AppContext {
@@ -23,7 +24,7 @@ public class AppContext {
     public AppContext() {
         // Serialisation
         userStorage = new UserStorage(USERS_FILE_PATH, new SimpleXOREncryption("BasicKey"));
-        Set<User> users = userStorage.loadUsers();
+        Collection<User> users = userStorage.loadUsers();
 
         // Validators
         Validator bankAccountNameValidator = new BankAccountNameValidator();

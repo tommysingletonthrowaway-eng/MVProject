@@ -3,6 +3,7 @@ package dev.tommy.bankapp.data;
 import dev.tommy.bankapp.encryption.EncryptionStrategy;
 import dev.tommy.bankapp.encryption.NoEncryption;
 import dev.tommy.bankapp.encryption.SimpleXOREncryption;
+import dev.tommy.bankapp.exceptions.account.NoTransactionException;
 import dev.tommy.bankapp.exceptions.bankaccount.BankAccountNotFoundException;
 import org.junit.jupiter.api.Test;
 
@@ -51,6 +52,10 @@ class UserStorageTest {
         assertEquals(800, loadedBankAccount.getBalance());
         assertEquals(Currency.GBP, loadedBankAccount.getCurrency());
         assertFalse(loadedBankAccount.getTransactionHistory().isEmpty());
-        assertEquals(TransactionType.DEPOSIT, loadedBankAccount.getTransactionHistory().getFirst().type());
+        try {
+            assertEquals(TransactionType.WITHDRAW, loadedBankAccount.getLatestTransaction().type());
+        } catch (NoTransactionException e) {
+            fail("No transaction found.");
+        }
     }
 }

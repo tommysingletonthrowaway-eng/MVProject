@@ -1,6 +1,8 @@
 package dev.tommy.bankapp.cli.utils;
 
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Optional;
 import java.util.Scanner;
 
@@ -39,8 +41,33 @@ public class CLIUtils {
         if (line == null || line.trim().isEmpty()) {
             return new String[0];
         }
-        return line.trim().split("\\s+");
+
+        List<String> args = new ArrayList<>();
+        StringBuilder current = new StringBuilder();
+        boolean inQuotes = false;
+
+        for (int i = 0; i < line.length(); i++) {
+            char c = line.charAt(i);
+
+            if (c == '"') {
+                inQuotes = !inQuotes; // toggle quote state
+            } else if (Character.isWhitespace(c) && !inQuotes) {
+                if (!current.isEmpty()) {
+                    args.add(current.toString());
+                    current.setLength(0);
+                }
+            } else {
+                current.append(c);
+            }
+        }
+
+        if (!current.isEmpty()) {
+            args.add(current.toString());
+        }
+
+        return args.toArray(new String[0]);
     }
+
 
     public static KeyPress readKeyRaw() {
         enableRawMode();
