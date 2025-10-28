@@ -1,5 +1,7 @@
 package dev.tommy.bankapp.data;
 
+import dev.tommy.bankapp.data.transaction.Transaction;
+import dev.tommy.bankapp.data.transaction.TransactionFactory;
 import dev.tommy.bankapp.exceptions.account.NoTransactionException;
 import dev.tommy.bankapp.utils.BankUtils;
 import dev.tommy.bankapp.utils.CurrencyConverter;

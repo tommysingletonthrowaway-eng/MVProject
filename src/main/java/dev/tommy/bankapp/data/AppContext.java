@@ -1,5 +1,8 @@
 package dev.tommy.bankapp.data;
 
+import dev.tommy.bankapp.data.user.User;
+import dev.tommy.bankapp.data.user.UserRepository;
+import dev.tommy.bankapp.data.user.UserStorage;
 import dev.tommy.bankapp.encryption.SimpleXOREncryption;
 import dev.tommy.bankapp.service.BankAccountService;
 import dev.tommy.bankapp.service.BankAccountServiceImpl;
@@ -11,7 +14,6 @@ import dev.tommy.bankapp.validator.UsernameValidator;
 import dev.tommy.bankapp.validator.Validator;
 
 import java.util.Collection;
-import java.util.Set;
 
 public class AppContext {
     public static final String USERS_FILE_PATH = "users.dat";

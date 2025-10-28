@@ -1,4 +1,4 @@
-package dev.tommy.bankapp.data;
+package dev.tommy.bankapp.data.transaction;
 
 import java.time.LocalDateTime;
 

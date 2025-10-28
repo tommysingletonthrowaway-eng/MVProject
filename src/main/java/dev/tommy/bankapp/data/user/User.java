@@ -1,5 +1,7 @@
-package dev.tommy.bankapp.data;
+package dev.tommy.bankapp.data.user;
 
+import dev.tommy.bankapp.data.BankAccount;
+import dev.tommy.bankapp.data.budget.BudgetManager;
 import dev.tommy.bankapp.exceptions.bankaccount.BankAccountNotFoundException;
 import dev.tommy.bankapp.validator.Validator;
 
@@ -16,11 +18,13 @@ public class User implements Serializable {
 
     private String username;
     private String password;
+    public final BudgetManager budgetManager;
     private final List<BankAccount> bankAccounts;
 
     public User(String username, String password) {
         this.username = username;
         this.password = password;
+        this.budgetManager = new BudgetManager();
         this.bankAccounts = new ArrayList<>();
     }
 

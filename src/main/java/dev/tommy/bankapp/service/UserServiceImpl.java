@@ -1,7 +1,7 @@
 package dev.tommy.bankapp.service;
 
-import dev.tommy.bankapp.data.User;
-import dev.tommy.bankapp.data.UserRepository;
+import dev.tommy.bankapp.data.user.User;
+import dev.tommy.bankapp.data.user.UserRepository;
 import dev.tommy.bankapp.exceptions.user.DuplicateUserException;
 import dev.tommy.bankapp.exceptions.user.InvalidPasswordException;
 import dev.tommy.bankapp.exceptions.user.InvalidUsernameException;
@@ -9,7 +9,6 @@ import dev.tommy.bankapp.exceptions.user.UserNotFoundException;
 import dev.tommy.bankapp.validator.Validator;
 
 import java.util.Collection;
-import java.util.Set;
 
 public class UserServiceImpl implements UserService {
     private final UserRepository userRepository;

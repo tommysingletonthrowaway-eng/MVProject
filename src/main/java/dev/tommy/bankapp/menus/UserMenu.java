@@ -4,7 +4,7 @@ import dev.tommy.bankapp.BankApp;
 import dev.tommy.bankapp.cli.*;
 import dev.tommy.bankapp.data.BankAccount;
 import dev.tommy.bankapp.data.Currency;
-import dev.tommy.bankapp.data.User;
+import dev.tommy.bankapp.data.user.User;
 import dev.tommy.bankapp.cli.utils.CLIUtils;
 import dev.tommy.bankapp.exceptions.bankaccount.BankAccountNotFoundException;
 import dev.tommy.bankapp.exceptions.user.*;
@@ -26,6 +26,11 @@ public class UserMenu {
                     promptCreateNewAccount(user);
                     return MenuOperation.CONTINUE;
 
+                })
+
+                .addItem("Manage budget", "", args -> {
+                    BudgetMenu.showMenu(user.budgetManager);
+                    return MenuOperation.CONTINUE;
                 })
 
                 .addItem("Change username", "", args -> {

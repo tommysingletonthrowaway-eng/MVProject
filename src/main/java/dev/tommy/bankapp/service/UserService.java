@@ -1,13 +1,12 @@
 package dev.tommy.bankapp.service;
 
-import dev.tommy.bankapp.data.User;
+import dev.tommy.bankapp.data.user.User;
 import dev.tommy.bankapp.exceptions.user.DuplicateUserException;
 import dev.tommy.bankapp.exceptions.user.InvalidPasswordException;
 import dev.tommy.bankapp.exceptions.user.InvalidUsernameException;
 import dev.tommy.bankapp.exceptions.user.UserNotFoundException;
 
 import java.util.Collection;
-import java.util.Set;
 
 public interface UserService {
     User registerUser(String username, String password)

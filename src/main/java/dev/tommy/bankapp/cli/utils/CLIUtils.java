@@ -5,6 +5,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.Scanner;
+import java.util.function.Function;
 
 public class CLIUtils {
     public static Scanner scanner = new Scanner(System.in);
@@ -23,6 +24,23 @@ public class CLIUtils {
         }
 
         return Optional.of(input);
+    }
+
+    public static <T> Optional<T> promptInput(String prompt, Function<String, T> parser) {
+        IO.print(prompt);
+        String input = CLIUtils.scanner.nextLine().trim();
+
+        if (input.isEmpty() || input.equalsIgnoreCase("exit")) {
+            return Optional.empty();
+        }
+
+        try {
+            T value = parser.apply(input);
+            return Optional.of(value);
+        } catch (Exception e) {
+            IO.println("Invalid input. Please try again.");
+            return Optional.empty();
+        }
     }
 
     public static String getTitle(String str) {

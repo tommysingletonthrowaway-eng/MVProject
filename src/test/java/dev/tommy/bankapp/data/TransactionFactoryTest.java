@@ -1,5 +1,8 @@
 package dev.tommy.bankapp.data;
 
+import dev.tommy.bankapp.data.transaction.Transaction;
+import dev.tommy.bankapp.data.transaction.TransactionFactory;
+import dev.tommy.bankapp.data.transaction.TransactionType;
 import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.*;

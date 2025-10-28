@@ -1,4 +1,4 @@
-package dev.tommy.bankapp.data;
+package dev.tommy.bankapp.data.transaction;
 
 public enum TransactionType {
     DEPOSIT,

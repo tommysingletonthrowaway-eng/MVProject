@@ -1,4 +1,4 @@
-package dev.tommy.bankapp.data;
+package dev.tommy.bankapp.data.user;
 
 import dev.tommy.bankapp.encryption.EncryptionStrategy;
 
@@ -7,7 +7,6 @@ import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.Collection;
 import java.util.HashSet;
-import java.util.Set;
 
 public class UserStorage {
     private final String filePath;

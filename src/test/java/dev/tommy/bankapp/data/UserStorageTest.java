@@ -1,5 +1,8 @@
 package dev.tommy.bankapp.data;
 
+import dev.tommy.bankapp.data.transaction.TransactionType;
+import dev.tommy.bankapp.data.user.User;
+import dev.tommy.bankapp.data.user.UserStorage;
 import dev.tommy.bankapp.encryption.EncryptionStrategy;
 import dev.tommy.bankapp.encryption.NoEncryption;
 import dev.tommy.bankapp.encryption.SimpleXOREncryption;

@@ -7,12 +7,10 @@ import dev.tommy.bankapp.cli.MenuOperation;
 import dev.tommy.bankapp.cli.WordMenu;
 import dev.tommy.bankapp.data.BankAccount;
 import dev.tommy.bankapp.data.Currency;
-import dev.tommy.bankapp.data.Transaction;
 import dev.tommy.bankapp.utils.BankUtils;
 import dev.tommy.bankapp.cli.utils.CLIUtils;
 import dev.tommy.bankapp.utils.CurrencyConverter;
 
-import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.Optional;
 

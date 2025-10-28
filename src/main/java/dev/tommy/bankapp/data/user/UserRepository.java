@@ -1,4 +1,4 @@
-package dev.tommy.bankapp.data;
+package dev.tommy.bankapp.data.user;
 
 import dev.tommy.bankapp.exceptions.user.UserNotFoundException;
 

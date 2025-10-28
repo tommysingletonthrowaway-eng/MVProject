@@ -1,13 +1,13 @@
 package dev.tommy.bankapp.data;
 
+import dev.tommy.bankapp.data.transaction.Transaction;
+import dev.tommy.bankapp.data.transaction.TransactionType;
 import dev.tommy.bankapp.exceptions.account.NoTransactionException;
 import dev.tommy.bankapp.utils.BankUtils;
 import dev.tommy.bankapp.utils.CurrencyConverter;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.params.shadow.com.univocity.parsers.annotations.Convert;
 
 import java.time.LocalDateTime;
-import java.util.List;
 
 import static java.lang.Thread.sleep;
 import static org.junit.jupiter.api.Assertions.*;
