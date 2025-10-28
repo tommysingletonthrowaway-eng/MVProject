@@ -1,7 +1,5 @@
-package dev.tommy.bankapp.data;
+package dev.tommy.bankapp.data.user;
 
-import dev.tommy.bankapp.data.user.User;
-import dev.tommy.bankapp.data.user.UserRepository;
 import dev.tommy.bankapp.exceptions.user.UserNotFoundException;
 import org.junit.jupiter.api.Test;
 

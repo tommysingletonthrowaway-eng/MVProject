@@ -1,8 +1,8 @@
-package dev.tommy.bankapp.data;
+package dev.tommy.bankapp.data.user;
 
+import dev.tommy.bankapp.data.BankAccount;
+import dev.tommy.bankapp.data.Currency;
 import dev.tommy.bankapp.data.transaction.TransactionType;
-import dev.tommy.bankapp.data.user.User;
-import dev.tommy.bankapp.data.user.UserStorage;
 import dev.tommy.bankapp.encryption.EncryptionStrategy;
 import dev.tommy.bankapp.encryption.NoEncryption;
 import dev.tommy.bankapp.encryption.SimpleXOREncryption;
@@ -10,6 +10,7 @@ import dev.tommy.bankapp.exceptions.account.NoTransactionException;
 import dev.tommy.bankapp.exceptions.bankaccount.BankAccountNotFoundException;
 import org.junit.jupiter.api.Test;
 
+import java.util.Collection;
 import java.util.HashSet;
 import java.util.Set;
 
@@ -38,7 +39,7 @@ class UserStorageTest {
 
         storage.saveUsers(savedUsers);
 
-        Set<User> loadedUsers = storage.loadUsers();
+        Collection<User> loadedUsers = storage.loadUsers();
         assertNotNull(loadedUsers);
         assertFalse(loadedUsers.isEmpty());
         User loadedJohn = loadedUsers.stream().findFirst().get();
