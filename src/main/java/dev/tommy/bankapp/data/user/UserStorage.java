@@ -1,69 +1,53 @@
 package dev.tommy.bankapp.data.user;
 
 import dev.tommy.bankapp.encryption.EncryptionStrategy;
-
 import java.io.*;
 import java.nio.file.Files;
 import java.nio.file.Paths;
-import java.util.Collection;
-import java.util.HashSet;
 
 public class UserStorage {
     private final String filePath;
     private final EncryptionStrategy encryptionStrategy;
 
     public UserStorage(String filePath, EncryptionStrategy encryptionStrategy) {
-        this.encryptionStrategy = encryptionStrategy;
         this.filePath = filePath;
+        this.encryptionStrategy = encryptionStrategy;
     }
 
-    public boolean saveUsers(Collection<User> users) {
+    public boolean saveRepository(UserRepository repository) {
         try {
-            // Serialize users to byte array
             ByteArrayOutputStream baos = new ByteArrayOutputStream();
             try (ObjectOutputStream out = new ObjectOutputStream(baos)) {
-                out.writeObject(users);
+                out.writeObject(repository);
             }
 
-            // Encrypt serialized bytes
-            byte[] encryptedData = encryptionStrategy.encrypt(baos.toByteArray());
-
-            // Write encrypted data to file
-            Files.write(Paths.get(filePath), encryptedData);
-
+            byte[] encrypted = encryptionStrategy.encrypt(baos.toByteArray());
+            Files.write(Paths.get(filePath), encrypted);
             return true;
         } catch (Exception e) {
-            IO.println("Failed to save users: " + e.getMessage());
+            System.err.println("Failed to save repository: " + e.getMessage());
+            return false;
         }
-
-        return false;
     }
 
-    public Collection<User> loadUsers() {
+    public UserRepository loadRepository() {
         File file = new File(filePath);
-        if (!file.exists()) {
-            return new HashSet<>();
-        }
+        if (!file.exists()) return new UserRepository();
 
         try {
-            // Read encrypted bytes from file
-            byte[] encryptedData = Files.readAllBytes(Paths.get(filePath));
+            byte[] encrypted = Files.readAllBytes(Paths.get(filePath));
+            byte[] decrypted = encryptionStrategy.decrypt(encrypted);
 
-            // Decrypt bytes
-            byte[] decryptedData = encryptionStrategy.decrypt(encryptedData);
-
-            // Deserialize bytes back to Set<User>
-            ByteArrayInputStream bais = new ByteArrayInputStream(decryptedData);
-            try (ObjectInputStream in = new ObjectInputStream(bais)) {
+            try (ObjectInputStream in = new ObjectInputStream(new ByteArrayInputStream(decrypted))) {
                 Object obj = in.readObject();
-                if (obj instanceof Collection) {
-                    return (Collection<User>) obj;
+                if (obj instanceof UserRepository repo) {
+                    return repo;
                 }
             }
         } catch (Exception e) {
-            IO.println("Failed to load users: " + e.getMessage());
+            System.err.println("Failed to load repository: " + e.getMessage());
         }
 
-        return new HashSet<>();
+        return new UserRepository();
     }
 }

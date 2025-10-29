@@ -1,100 +1,136 @@
 package dev.tommy.bankapp.service;
 
-import dev.tommy.bankapp.data.user.IUserRepository;
-import dev.tommy.bankapp.data.user.User;
-import dev.tommy.bankapp.exceptions.user.DuplicateUserException;
-import dev.tommy.bankapp.exceptions.user.InvalidPasswordException;
-import dev.tommy.bankapp.exceptions.user.InvalidUsernameException;
-import dev.tommy.bankapp.exceptions.user.UserNotFoundException;
+import dev.tommy.bankapp.data.user.*;
+import dev.tommy.bankapp.exceptions.user.*;
 import dev.tommy.bankapp.validator.Validator;
+import org.mindrot.jbcrypt.BCrypt;
 
 import java.util.Collection;
+import java.util.List;
+import java.util.Optional;
+import java.util.UUID;
 
-public class UserServiceImpl implements UserService {
-    private final IUserRepository userRepository;
+public class UserServiceImpl implements IUserService {
+
+    private UserRepository userRepository;
     private final Validator usernameValidator;
     private final Validator passwordValidator;
+    private final UserStorage userStorage;
 
-    public UserServiceImpl(IUserRepository userRepository, Validator usernameValidator, Validator passwordValidator) {
+    public UserServiceImpl(UserRepository userRepository, UserStorage userStorage, Validator usernameValidator, Validator passwordValidator) {
         this.userRepository = userRepository;
         this.usernameValidator = usernameValidator;
         this.passwordValidator = passwordValidator;
+        this.userStorage = userStorage;
     }
 
-    @Override
-    public User registerUser(String username, String password) throws InvalidUsernameException, InvalidPasswordException, DuplicateUserException {
-        if (!usernameValidator.isValid(username)) {
-            throw new InvalidUsernameException(usernameValidator.getErrorMessage());
-        }
-
-        if (!passwordValidator.isValid(password)) {
-            throw new InvalidPasswordException(passwordValidator.getErrorMessage());
-        }
+    // Register user
+    public void registerUser(String username, String password)
+            throws DuplicateUserException, InvalidUsernameException, InvalidPasswordException {
 
         if (userRepository.existsByUsername(username)) {
-            throw new DuplicateUserException(username);
+            throw new DuplicateUserException("Username already exists: " + username);
         }
 
-        User newUser = new User(username, password);
-        userRepository.add(newUser);
-        return newUser;
+        validateUsername(username);
+        validatePassword(password);
+
+        String hashedPassword = BCrypt.hashpw(password, BCrypt.gensalt());
+        Credentials credentials = new Credentials(username, hashedPassword);
+        userRepository.addUser(credentials);
     }
 
-    @Override
-    public void registerUser(User user)
-            throws InvalidUsernameException, InvalidPasswordException, DuplicateUserException {
-        if (!usernameValidator.isValid(user.getUsername())) {
-            throw new InvalidUsernameException(usernameValidator.getErrorMessage());
+    // Login
+    public User login(String username, String password) throws InvalidUsernameException, InvalidPasswordException {
+        Optional<UUID> userIdOpt = userRepository.findUserIdByUsername(username);
+        if (userIdOpt.isEmpty()) {
+            throw new InvalidUsernameException("Username not found: " + username);
         }
 
-        if (!user.validatePassword(passwordValidator)) {
-            throw new InvalidPasswordException(passwordValidator.getErrorMessage());
+        UUID userId = userIdOpt.get();
+        Credentials creds = userRepository.getCredentials(userId)
+                .orElseThrow(() -> new InvalidUsernameException("Credentials not found"));
+
+        if (!BCrypt.checkpw(password, creds.getPasswordHash())) {
+            throw new InvalidPasswordException("Invalid password");
         }
 
-        if (userRepository.existsByUsername(user.getUsername())) {
-            throw new DuplicateUserException(user.getUsername());
-        }
-
-        userRepository.add(user);
+        return userRepository.getUserById(userId)
+                .orElseThrow(() -> new InvalidUsernameException("User not found after authentication"));
     }
 
-    @Override
-    public void removeUser(User user) throws UserNotFoundException {
-        userRepository.remove(user);
+    // Remove user
+    public void removeUser(UUID userId) throws UserNotFoundException {
+        userRepository.removeUser(userId);
     }
 
-    @Override
-    public User getUserByUsername(String username) throws UserNotFoundException {
-        return userRepository.findByUsername(username)
-                .orElseThrow(() -> new UserNotFoundException(username));
-    }
+    // Change username
+    public void changeUserUsername(UUID userId, String newUsername)
+            throws UserNotFoundException, DuplicateUserException, InvalidUsernameException {
 
-    @Override
-    public void changeUserUsername(User user, String newUsername) throws InvalidUsernameException, DuplicateUserException {
-        if (!usernameValidator.isValid(newUsername)) {
-            throw new InvalidUsernameException(usernameValidator.getErrorMessage());
-        }
         if (userRepository.existsByUsername(newUsername)) {
-            throw new DuplicateUserException(newUsername);
+            throw new DuplicateUserException("Username already exists: " + newUsername);
         }
-        user.changeUsername(newUsername);
+
+        boolean exists = userRepository.existsByUUID(userId);
+        if (!exists)
+            throw new UserNotFoundException("User does not exist");
+
+        if (!validateUsername(newUsername))
+            throw new InvalidUsernameException("Invalid username: " + usernameValidator.getErrorMessage());
+
+        userRepository.updateUsername(userId, newUsername);
+    }
+
+    // Change password
+    public void changeUserPassword(UUID userId, String newPassword) throws InvalidPasswordException, UserNotFoundException {
+        if (!validatePassword(newPassword))
+            throw new InvalidPasswordException("Invalid username: " + passwordValidator.getErrorMessage());
+
+        Credentials creds = userRepository.getCredentials(userId)
+                .orElseThrow(() -> new UserNotFoundException("User not found"));
+
+        String hashedPassword = BCrypt.hashpw(newPassword, BCrypt.gensalt());
+        creds.setPasswordHash(hashedPassword);
     }
 
     @Override
-    public void changeUserPassword(User user, String newPassword) throws InvalidPasswordException {
-        if (!passwordValidator.isValid(newPassword)) {
-            throw new InvalidPasswordException(passwordValidator.getErrorMessage());
-        }
-        user.changePassword(newPassword);
+    public String getUsername(UUID uuid) throws UserNotFoundException {
+        Credentials creds = userRepository.getCredentials(uuid)
+                .orElseThrow(() -> new UserNotFoundException("No user found"));
+        return creds.getUsername();
     }
 
     @Override
-    public Collection<User> users() {
-        return userRepository.getAllUsers();
+    public Collection<String> getUsernames() {
+        return userRepository.getUsernames();
     }
 
     @Override
+    public boolean existsByUsername(String username) {
+        return this.userRepository.existsByUsername(username);
+    }
+
+    private boolean validateUsername(String username) throws InvalidUsernameException {
+        return this.usernameValidator.isValid(username);
+    }
+
+    private boolean validatePassword(String username) throws InvalidPasswordException {
+        return this.passwordValidator.isValid(username);
+    }
+
+    // Clear all
     public void clear() {
         userRepository.clear();
+    }
+
+    @Override
+    public boolean save() {
+        return userStorage.saveRepository(userRepository);
+    }
+
+    @Override
+    public void load() {
+        userRepository = userStorage.loadRepository();
     }
 }

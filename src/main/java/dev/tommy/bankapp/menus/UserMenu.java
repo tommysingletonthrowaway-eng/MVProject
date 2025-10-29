@@ -10,10 +10,19 @@ import dev.tommy.bankapp.exceptions.bankaccount.BankAccountNotFoundException;
 import dev.tommy.bankapp.exceptions.user.*;
 
 import java.util.Optional;
+import java.util.UUID;
 
 public class UserMenu {
     public static void showUser(User user) {
-        String title = CLIUtils.getTitle(user.getUsername());
+        String username;
+        try {
+            username = BankApp.context.userService.getUsername(user.getUuid());
+        } catch (UserNotFoundException e) {
+            IO.println("User not found. Returning to main menu.");
+            return;
+        }
+
+        String title = CLIUtils.getTitle(username);
         Menu userMenu = new NumberedMenu(title, false, System.in, System.out);
 
         userMenu
@@ -85,24 +94,32 @@ public class UserMenu {
     private static void promptChangeUsername(User user) {
         CLIUtils.printTitle("Change Account Username");
 
-        String startUsername = user.getUsername();
+        String startUsername = null;
+        try {
+            startUsername = BankApp.context.userService.getUsername(user.getUuid());
+        } catch (UserNotFoundException e) {
+            IO.println("User not found. Returning to menu.");
+            CLIUtils.pressEnterToContinue();
+        }
 
         while (true) {
             Optional<String> username = CLIUtils.promptInput("Enter username or type 'exit' to exit: ");
 
             if (username.isEmpty()) {
                 IO.println("Username change cancelled.");
+                CLIUtils.pressEnterToContinue();
                 return;
             }
 
             try {
-                BankApp.context.userService.changeUserUsername(user, username.get());
+                BankApp.context.userService.changeUserUsername(user.getUuid(), username.get());
                 BankApp.context.saveUsers();
-                IO.println("Username changed successfully from " + startUsername + " to " + user + ".");
+                IO.println("Username changed successfully from " + startUsername + " to " + username.get() + ".");
                 CLIUtils.pressEnterToContinue();
                 return;
             } catch (UserException e) {
                 IO.println("Error: " + e.getMessage());
+                CLIUtils.pressEnterToContinue();
             }
         }
     }
@@ -113,14 +130,22 @@ public class UserMenu {
         IO.println("Are you sure you want to delete your user '" + user + "' and all bank accounts?");
         IO.println("Enter 'DELETE' to delete permanently");
         String input = CLIUtils.scanner.nextLine();
+        String username;
+
+        try {
+            username = BankApp.context.userService.getUsername(user.getUuid());
+        } catch (UserNotFoundException e) {
+            IO.println("User not found. Returning to menu.");
+            return true;
+        }
 
         IO.println();
         if (input.equals("DELETE")) {
             try {
-                BankApp.context.userService.removeUser(user);
-                IO.println("User '" + user + "' deleted. Returning to main menu.");
+                BankApp.context.userService.removeUser(user.getUuid());
+                IO.println("User '" + username + "' deleted. Returning to main menu.");
             } catch (UserNotFoundException e) {
-                IO.println("User '" + user + "' was not in the database to be deleted. Returning to main menu.");
+                IO.println("User '" + username + "' was not in the database to be deleted. Returning to main menu.");
             }
             BankApp.context.saveUsers();
 
@@ -140,7 +165,13 @@ public class UserMenu {
             return;
         }
 
-        user.changePassword(password.get());
+        try {
+            BankApp.context.userService.changeUserPassword(user.getUuid(), password.get());
+        } catch (UserNotFoundException e) {
+            IO.println("No user found: " + e.getMessage());
+        } catch (InvalidPasswordException e) {
+            IO.println("Password is not valid: " + e.getMessage());
+        }
         BankApp.context.saveUsers();
         IO.println("User password changed successfully.");
 
@@ -207,10 +238,8 @@ public class UserMenu {
         IO.print("Enter username: ");
         String username = CLIUtils.scanner.nextLine().trim();
 
-        User user;
-        try {
-            user = BankApp.context.userService.getUserByUsername(username);
-        } catch (UserNotFoundException e) {
+        boolean exists = BankApp.context.userService.existsByUsername(username);
+        if (!exists) {
             IO.println("No user with username.");
             CLIUtils.pressEnterToContinue();
             return null;
@@ -219,10 +248,15 @@ public class UserMenu {
         IO.print("Enter password: ");
         String password = CLIUtils.scanner.nextLine().trim();
 
-        if (!user.checkPassword(password)) {
-            IO.println("Invalid password.");
+        User user = null;
+        try {
+            user = BankApp.context.userService.login(username, password);
+        } catch (InvalidUsernameException e) {
+            IO.println("Invalid username: " + e.getMessage());
             CLIUtils.pressEnterToContinue();
-            return null;
+        } catch (InvalidPasswordException e) {
+            IO.println("Invalid password: " + e.getMessage());
+            CLIUtils.pressEnterToContinue();
         }
 
         return user;

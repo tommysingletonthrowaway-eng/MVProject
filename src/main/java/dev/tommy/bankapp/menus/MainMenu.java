@@ -68,8 +68,8 @@ public class MainMenu {
 
     private static void printAllUsers() {
         CLIUtils.printTitle("All Users");
-        for (User user : BankApp.context.userService.users()) {
-            IO.println("- " + user);
+        for (String username : BankApp.context.userService.getUsernames()) {
+            IO.println("- " + username);
         }
 
         CLIUtils.pressEnterToContinue();

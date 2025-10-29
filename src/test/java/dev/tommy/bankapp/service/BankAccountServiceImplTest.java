@@ -9,6 +9,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import java.util.List;
+import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
@@ -23,7 +24,7 @@ class BankAccountServiceImplTest {
     void setUp() {
         accountNameValidator = mock(Validator.class);
         bankAccountService = new BankAccountServiceImpl(accountNameValidator);
-        user = new User("John", "password123");
+        user = new User(UUID.randomUUID());
     }
 
     @Test

@@ -8,6 +8,7 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
 import java.util.List;
+import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -20,53 +21,9 @@ class UserTest {
 
     @BeforeEach
     void setUp() {
-        user = new User("John", "password");
+        user = new User(UUID.randomUUID());
         natwestAccount = new BankAccount("Natwest", Currency.GBP);
         hsbcAccount = new BankAccount("HSBC", Currency.GBP);
-    }
-
-    // ───────────────────────────
-    // User Credentials Tests
-    // ───────────────────────────
-
-    @Test
-    @DisplayName("Should return correct username")
-    void testGetUsername() {
-        assertEquals("John", user.getUsername());
-        assertNotEquals("Jim", user.getUsername());
-    }
-
-    @Test
-    @DisplayName("Should change password successfully")
-    void testChangePassword() {
-        String newPassword = "newPassword";
-
-        assertTrue(user.checkPassword("password"), "Original password should be valid");
-
-        user.changePassword(newPassword);
-
-        assertTrue(user.checkPassword(newPassword), "New password should be valid");
-        assertFalse(user.checkPassword("password"), "Old password should no longer be valid");
-    }
-
-    @Test
-    @DisplayName("Should change username successfully")
-    void testChangeUsername() {
-        String newUsername = "Dave";
-
-        assertEquals("John", user.getUsername());
-
-        user.changeUsername(newUsername);
-
-        assertEquals(newUsername, user.getUsername());
-        assertNotEquals("John", user.getUsername());
-    }
-
-    @Test
-    @DisplayName("Should verify password correctly")
-    void testCheckPassword() {
-        assertTrue(user.checkPassword("password"));
-        assertFalse(user.checkPassword("wrongPassword"));
     }
 
     // ───────────────────────────

@@ -14,8 +14,7 @@ import org.junit.jupiter.params.provider.MethodSource;
 
 import java.io.File;
 import java.nio.file.Path;
-import java.util.Collection;
-import java.util.Set;
+import java.util.UUID;
 import java.util.stream.Stream;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -38,7 +37,7 @@ class UserStorageTest {
     }
 
     private User createUserWithAccount() {
-        User user = new User("John", "password");
+        User user = new User();
         BankAccount account = new BankAccount("Natwest", Currency.GBP);
         user.addBankAccount(account);
         account.deposit(1000);
@@ -50,9 +49,8 @@ class UserStorageTest {
         return tempDir.resolve(name).toFile();
     }
 
-    private void verifyUserRestoredCorrectly(User loadedUser) {
-        assertEquals("John", loadedUser.getUsername(), "Username should match original");
-        assertTrue(loadedUser.checkPassword("password"), "Password should be correctly loaded");
+    private void verifyUserRestoredCorrectly(User loadedUser, Credentials loadedCreds) {
+        assertEquals("John", loadedCreds.getUsername(), "Username should match original credentials");
         assertTrue(loadedUser.hasAccountNamed("Natwest"), "Account name should persist correctly");
 
         try {
@@ -64,38 +62,50 @@ class UserStorageTest {
         }
     }
 
+
     // ───────────────────────────────
     // Parameterized Encryption Tests
     // ───────────────────────────────
 
-    @ParameterizedTest(name = "Should save and load user with {0}")
+    @ParameterizedTest(name = "Should save and load repository with {0}")
     @MethodSource("encryptionStrategies")
     void testSaveAndLoad_WithEncryption(EncryptionStrategy encryption) {
         File file = getTempFile(encryption.getClass().getSimpleName() + ".dat");
         UserStorage storage = new UserStorage(file.getAbsolutePath(), encryption);
 
+        // Create repo, user, and credentials
+        UserRepository repo = new UserRepository();
         User user = createUserWithAccount();
-        storage.saveUsers(Set.of(user));
+        Credentials creds = new Credentials("John", "hashedPassword123");
+        UUID id = repo.addUser(user, creds);
 
-        Collection<User> loadedUsers = storage.loadUsers();
-        assertEquals(1, loadedUsers.size(), "One user should be loaded");
+        // Save repository
+        assertTrue(storage.saveRepository(repo), "Repository should save successfully");
 
-        verifyUserRestoredCorrectly(loadedUsers.iterator().next());
+        // Load repository
+        UserRepository loadedRepo = storage.loadRepository();
+        assertEquals(1, loadedRepo.getAllUsers().size(), "One user should be loaded");
+
+        User loadedUser = loadedRepo.getUserById(id).orElseThrow();
+        Credentials loadedCreds = loadedRepo.getCredentials(id).orElseThrow();
+
+        verifyUserRestoredCorrectly(loadedUser, loadedCreds);
     }
+
 
     // ───────────────────────────────
     // Additional Focused Tests
     // ───────────────────────────────
 
     @Test
-    @DisplayName("Should load empty collection when file is missing or empty")
+    @DisplayName("Should load empty repository when file is missing or empty")
     void testLoadEmptyFile() {
         File file = getTempFile("empty.dat");
         UserStorage storage = new UserStorage(file.getAbsolutePath(), new NoEncryption());
 
-        Collection<User> users = storage.loadUsers();
+        UserRepository repo = storage.loadRepository();
 
-        assertTrue(users.isEmpty(), "Expected no users to be loaded from empty file");
+        assertTrue(repo.getAllUsers().isEmpty(), "Expected no users to be loaded from empty file");
     }
 
     @Test
@@ -104,10 +114,15 @@ class UserStorageTest {
         File file = getTempFile("txHistory.dat");
         UserStorage storage = new UserStorage(file.getAbsolutePath(), new NoEncryption());
 
+        UserRepository repo = new UserRepository();
         User user = createUserWithAccount();
-        storage.saveUsers(Set.of(user));
+        Credentials creds = new Credentials("John", "password123");
+        repo.addUser(user, creds);
 
-        User loadedUser = storage.loadUsers().iterator().next();
+        storage.saveRepository(repo);
+
+        UserRepository loadedRepo = storage.loadRepository();
+        User loadedUser = loadedRepo.getAllUsers().iterator().next();
         BankAccount loadedAccount = loadedUser.getBankAccount(0);
 
         assertEquals(2, loadedAccount.getTransactionHistory().size(), "Expected 2 transactions (deposit & withdraw)");

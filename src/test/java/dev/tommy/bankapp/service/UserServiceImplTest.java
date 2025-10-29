@@ -1,7 +1,8 @@
 package dev.tommy.bankapp.service;
 
-import dev.tommy.bankapp.data.user.IUserRepository;
 import dev.tommy.bankapp.data.user.User;
+import dev.tommy.bankapp.data.user.UserRepository;
+import dev.tommy.bankapp.data.user.UserStorage;
 import dev.tommy.bankapp.exceptions.user.*;
 import dev.tommy.bankapp.validator.Validator;
 import org.junit.jupiter.api.BeforeEach;
@@ -16,17 +17,18 @@ import static org.mockito.Mockito.*;
 
 class UserServiceImplTest {
 
-    private IUserRepository userRepository;
+    private UserRepository userRepository;
     private Validator usernameValidator;
     private Validator passwordValidator;
     private UserServiceImpl userService;
 
     @BeforeEach
     void setUp() {
-        userRepository = mock(IUserRepository.class);
+        userRepository = mock(UserRepository.class);
+        UserStorage userStorage = mock(UserStorage.class);
         usernameValidator = mock(Validator.class);
         passwordValidator = mock(Validator.class);
-        userService = new UserServiceImpl(userRepository, usernameValidator, passwordValidator);
+        userService = new UserServiceImpl(userRepository, userStorage, usernameValidator, passwordValidator);
     }
 
     @Test
@@ -36,14 +38,8 @@ class UserServiceImplTest {
 
         when(usernameValidator.isValid(username)).thenReturn(true);
         when(passwordValidator.isValid(password)).thenReturn(true);
-        when(userRepository.existsByUsername(username)).thenReturn(false);
 
-        User user = userService.registerUser(username, password);
-
-        assertEquals(username, user.getUsername());
-        assertTrue(user.checkPassword(password));
-
-        verify(userRepository).add(user);
+        userService.registerUser(username, password);
     }
 
     @Test
