@@ -2,128 +2,148 @@ package dev.tommy.bankapp.data.user;
 
 import dev.tommy.bankapp.exceptions.user.DuplicateUserException;
 import dev.tommy.bankapp.exceptions.user.UserNotFoundException;
-import org.junit.jupiter.api.*;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import java.util.Optional;
 import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.*;
 
-@DisplayName("UserRepository Tests")
 class UserRepositoryTest {
 
-    private UserRepository repo;
-    private User sampleUser;
-    private Credentials sampleCreds;
+    private UserRepository userRepository;
+    private UUID userId;
+    private Credentials credentials;
 
     @BeforeEach
     void setUp() {
-        repo = new UserRepository();
-        sampleUser = new User(); // assuming User has default constructor
-        sampleCreds = new Credentials("john_doe", "password123");
+        userRepository = new UserRepository();
+        credentials = new Credentials("testUser", "password123");
+        userId = userRepository.addUser(credentials);  // Add a user to the repository
     }
 
     @Test
-    @DisplayName("Should add user successfully and generate UUID")
     void testAddUser() {
-        UUID userId = repo.addUser(sampleUser, sampleCreds);
+        // Add a new user
+        assertNotNull(userId);
 
-        assertNotNull(userId, "UUID should not be null");
-        assertTrue(repo.existsByUUID(userId), "User should exist by UUID");
-        assertTrue(repo.existsByUsername("john_doe"), "Username should be mapped");
-        assertEquals(sampleUser, repo.getUserById(userId).orElseThrow());
-        assertEquals(sampleCreds, repo.getCredentials(userId).orElseThrow());
+        // Verify the user can be retrieved by ID
+        Optional<User> user = userRepository.getUserById(userId);
+        assertTrue(user.isPresent());
+        assertEquals(userId, user.get().getUuid());
     }
 
     @Test
-    @DisplayName("Should remove existing user successfully")
-    void testRemoveUser_Success() throws Exception {
-        UUID userId = repo.addUser(sampleUser, sampleCreds);
-        repo.removeUser(userId);
+    void testRemoveUser() throws UserNotFoundException {
+        // Remove the user
+        userRepository.removeUser(userId);
 
-        assertFalse(repo.existsByUUID(userId));
-        assertFalse(repo.existsByUsername("john_doe"));
-        assertTrue(repo.getUserById(userId).isEmpty());
-        assertTrue(repo.getCredentials(userId).isEmpty());
+        // Verify the user is removed and no longer exists
+        Optional<User> user = userRepository.getUserById(userId);
+        assertFalse(user.isPresent());
     }
 
     @Test
-    @DisplayName("Should throw exception when removing non-existent user")
-    void testRemoveUser_NotFound() {
-        UUID fakeId = UUID.randomUUID();
-        assertThrows(UserNotFoundException.class, () -> repo.removeUser(fakeId));
+    void testRemoveUserNotFound() {
+        UUID nonExistentUserId = UUID.randomUUID();
+
+        // Attempt to remove a non-existent user and expect an exception
+        assertThrows(UserNotFoundException.class, () -> userRepository.removeUser(nonExistentUserId));
     }
 
     @Test
-    @DisplayName("Should find user ID by username")
-    void testFindUserIdByUsername() {
-        UUID userId = repo.addUser(sampleUser, sampleCreds);
-        Optional<UUID> found = repo.findUserIdByUsername("john_doe");
+    void testUpdateUsername() throws UserNotFoundException, DuplicateUserException {
+        String newUsername = "newTestUser";
 
-        assertTrue(found.isPresent());
-        assertEquals(userId, found.get());
+        // Update the username of the user
+        userRepository.updateUsername(userId, newUsername);
+
+        // Verify that the username has been updated
+        Optional<Credentials> updatedCredentials = userRepository.getCredentials(userId);
+        assertTrue(updatedCredentials.isPresent());
+        assertEquals(newUsername, updatedCredentials.get().getUsername());
     }
 
     @Test
-    @DisplayName("Should update username correctly")
-    void testUpdateUsername_Success() throws Exception {
-        UUID userId = repo.addUser(sampleUser, sampleCreds);
-        repo.updateUsername(userId, "new_john");
+    void testUpdateUsernameToDuplicate() throws UserNotFoundException {
+        // Add a second user with a different username
+        Credentials secondCredentials = new Credentials("secondUser", "password123");
+        UUID secondUserId = userRepository.addUser(secondCredentials);
 
-        Optional<Credentials> updatedCreds = repo.getCredentials(userId);
-        assertEquals("new_john", updatedCreds.orElseThrow().getUsername());
-        assertTrue(repo.existsByUsername("new_john"));
-        assertFalse(repo.existsByUsername("john_doe"));
+        // Attempt to update the first user's username to the second user's username
+        assertThrows(DuplicateUserException.class, () -> userRepository.updateUsername(userId, "secondUser"));
     }
 
     @Test
-    @DisplayName("Should throw DuplicateUserException on username conflict")
-    void testUpdateUsername_Duplicate() throws Exception {
-        UUID id1 = repo.addUser(new User(), new Credentials("john_doe", "pw1"));
-        UUID id2 = repo.addUser(new User(), new Credentials("jane_doe", "pw2"));
+    void testUpdateUsernameUserNotFound() {
+        UUID nonExistentUserId = UUID.randomUUID();
 
-        assertThrows(DuplicateUserException.class, () -> repo.updateUsername(id2, "john_doe"));
+        // Attempt to update the username of a non-existent user
+        assertThrows(UserNotFoundException.class, () -> userRepository.updateUsername(nonExistentUserId, "newUsername"));
     }
 
     @Test
-    @DisplayName("Should throw UserNotFoundException on username update of missing user")
-    void testUpdateUsername_UserNotFound() {
-        UUID fakeId = UUID.randomUUID();
-        assertThrows(UserNotFoundException.class, () -> repo.updateUsername(fakeId, "new_name"));
+    void testGetCredentialsById() {
+        // Get credentials by userId
+        Optional<Credentials> retrievedCredentials = userRepository.getCredentials(userId);
+
+        assertTrue(retrievedCredentials.isPresent());
+        assertEquals(credentials.getUsername(), retrievedCredentials.get().getUsername());
     }
 
     @Test
-    @DisplayName("Should clear all users and mappings")
-    void testClear() {
-        repo.addUser(sampleUser, sampleCreds);
-        repo.clear();
+    void testFindUserByUsername() {
+        // Find the user by username
+        Optional<UUID> foundUserId = userRepository.findUserIdByUsername(credentials.getUsername());
 
-        assertTrue(repo.getAllUsers().isEmpty());
-        assertFalse(repo.existsByUsername("john_doe"));
+        assertTrue(foundUserId.isPresent());
+        assertEquals(userId, foundUserId.get());
     }
 
     @Test
-    @DisplayName("Should return correct user and credentials after multiple inserts")
-    void testMultipleUsersConsistency() {
-        UUID id1 = repo.addUser(new User(), new Credentials("user1", "pass1"));
-        UUID id2 = repo.addUser(new User(), new Credentials("user2", "pass2"));
+    void testFindUserByUsernameNotFound() {
+        // Try finding a user by a non-existing username
+        Optional<UUID> foundUserId = userRepository.findUserIdByUsername("nonExistentUsername");
 
-        assertNotEquals(id1, id2);
-        assertEquals(2, repo.getAllUsers().size());
-        assertTrue(repo.findUserIdByUsername("user1").isPresent());
-        assertTrue(repo.findUserIdByUsername("user2").isPresent());
+        assertFalse(foundUserId.isPresent());
     }
 
     @Test
-    @DisplayName("Should return false for non-existing username")
-    void testExistsByUsername_False() {
-        assertFalse(repo.existsByUsername("missing_user"));
+    void testExistsByUsername() {
+        // Check if the username exists
+        assertTrue(userRepository.existsByUsername(credentials.getUsername()));
+
+        // Check for a non-existent username
+        assertFalse(userRepository.existsByUsername("nonExistentUsername"));
     }
 
     @Test
-    @DisplayName("Should return empty Optional for non-existing user ID")
-    void testGetUserById_NotFound() {
-        Optional<User> user = repo.getUserById(UUID.randomUUID());
-        assertTrue(user.isEmpty());
+    void testClearAllUsers() {
+        // Clear all users
+        userRepository.clear();
+
+        // Verify that the repository is empty
+        assertTrue(userRepository.getAllUsers().isEmpty());
+    }
+
+    @Test
+    void testGetAllUsers() {
+        // Add some more users
+        UUID userId2 = userRepository.addUser(new Credentials("user2", "password456"));
+        UUID userId3 = userRepository.addUser(new Credentials("user3", "password789"));
+
+        // Retrieve all users
+        assertEquals(3, userRepository.getAllUsers().size());
+    }
+
+    @Test
+    void testExistsByUUID() {
+        // Verify that an existing userId exists
+        assertTrue(userRepository.existsByUUID(userId));
+
+        // Verify that a random UUID doesn't exist
+        UUID randomUUID = UUID.randomUUID();
+        assertFalse(userRepository.existsByUUID(randomUUID));
     }
 }

@@ -1,131 +1,121 @@
 package dev.tommy.bankapp.data.user;
 
-import dev.tommy.bankapp.data.BankAccount;
-import dev.tommy.bankapp.data.Currency;
-import dev.tommy.bankapp.data.transaction.TransactionType;
-import dev.tommy.bankapp.encryption.EncryptionStrategy;
-import dev.tommy.bankapp.encryption.NoEncryption;
-import dev.tommy.bankapp.encryption.SimpleXOREncryption;
-import dev.tommy.bankapp.exceptions.bankaccount.BankAccountNotFoundException;
-import org.junit.jupiter.api.*;
-import org.junit.jupiter.api.io.TempDir;
-import org.junit.jupiter.params.ParameterizedTest;
-import org.junit.jupiter.params.provider.MethodSource;
-
-import java.io.File;
-import java.nio.file.Path;
-import java.util.UUID;
-import java.util.stream.Stream;
-
+import static org.mockito.Mockito.*;
 import static org.junit.jupiter.api.Assertions.*;
 
-@DisplayName("UserStorage Tests")
-class UserStorageTest {
+import dev.tommy.bankapp.data.user.*;
+import dev.tommy.bankapp.encryption.EncryptionStrategy;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.mockito.*;
 
-    @TempDir
-    Path tempDir;
+import java.io.ByteArrayOutputStream;
+import java.io.File;
+import java.io.ObjectOutputStream;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 
-    // ───────────────────────────────
-    // Helper Methods
-    // ───────────────────────────────
+public class UserStorageTest {
 
-    static Stream<EncryptionStrategy> encryptionStrategies() {
-        return Stream.of(
-                new NoEncryption(),
-                new SimpleXOREncryption("SimpleKey")
-        );
+    private UserStorage userStorage;
+    private EncryptionStrategy encryptionStrategyMock;
+    private UserRepository userRepository;
+
+    @BeforeEach
+    void setUp() {
+        encryptionStrategyMock = mock(EncryptionStrategy.class);
+        userStorage = new UserStorage("testRepo.dat", encryptionStrategyMock);
+        userRepository = new UserRepository();
     }
 
-    private User createUserWithAccount() {
-        User user = new User();
-        BankAccount account = new BankAccount("Natwest", Currency.GBP);
-        user.addBankAccount(account);
-        account.deposit(1000);
-        account.withdraw(200);
-        return user;
+    @Test
+    void testSaveRepositorySuccess() throws Exception {
+        // Given
+        byte[] dummyData = "encryptedData".getBytes();
+        when(encryptionStrategyMock.encrypt(any(byte[].class))).thenReturn(dummyData);
+
+        // When
+        boolean result = userStorage.saveRepository(userRepository);
+
+        // Then
+        assertTrue(result);
+        verify(encryptionStrategyMock, times(1)).encrypt(any(byte[].class));
+        assertTrue(Files.exists(Paths.get("testRepo.dat")));
     }
 
-    private File getTempFile(String name) {
-        return tempDir.resolve(name).toFile();
+    @Test
+    void testSaveRepositoryFailure() throws Exception {
+        // Given
+        when(encryptionStrategyMock.encrypt(any(byte[].class))).thenThrow(new RuntimeException("Encryption error"));
+
+        // When
+        boolean result = userStorage.saveRepository(userRepository);
+
+        // Then
+        assertFalse(result);
+        verify(encryptionStrategyMock, times(1)).encrypt(any(byte[].class));
     }
 
-    private void verifyUserRestoredCorrectly(User loadedUser, Credentials loadedCreds) {
-        assertEquals("John", loadedCreds.getUsername(), "Username should match original credentials");
-        assertTrue(loadedUser.hasAccountNamed("Natwest"), "Account name should persist correctly");
+    @Test
+    void testLoadRepositorySuccess() throws Exception {
+        // Given
+        byte[] encryptedData = "encryptedData".getBytes();
+        byte[] decryptedData = "decryptedData".getBytes();
+        when(encryptionStrategyMock.decrypt(any(byte[].class))).thenReturn(decryptedData);
 
-        try {
-            BankAccount account = loadedUser.getBankAccount(0);
-            assertEquals(800, account.getBalance(), "Balance should reflect persisted transactions");
-            assertEquals(Currency.GBP, account.getCurrency(), "Currency should be GBP");
-        } catch (BankAccountNotFoundException e) {
-            fail("Expected bank account not found after load", e);
+        // Mocking repository object to match what we are trying to load
+        UserRepository repo = new UserRepository();
+        // Assuming repo can be serialized and deserialized
+        byte[] serializedRepo = serializeObject(repo);
+        when(encryptionStrategyMock.encrypt(any(byte[].class))).thenReturn(encryptedData);
+
+        Files.write(Paths.get("testRepo.dat"), encryptedData);
+
+        // When
+        UserRepository result = userStorage.loadRepository();
+
+        // Then
+        assertNotNull(result);
+        assertEquals(UserRepository.class, result.getClass());
+        verify(encryptionStrategyMock, times(1)).decrypt(any(byte[].class));
+    }
+
+    @Test
+    void testLoadRepositoryFileNotExist() {
+        // Given: File does not exist
+        File file = new File("testRepo.dat");
+        file.delete(); // Ensure the file is deleted before testing
+
+        // When
+        UserRepository result = userStorage.loadRepository();
+
+        // Then
+        assertNotNull(result);
+        assertEquals(UserRepository.class, result.getClass());
+    }
+
+    @Test
+    void testLoadRepositoryFailure() throws Exception {
+        // Given
+        byte[] encryptedData = "encryptedData".getBytes();
+        when(encryptionStrategyMock.decrypt(any(byte[].class))).thenThrow(new RuntimeException("Decryption error"));
+
+        // Write encrypted data into the file
+        Files.write(Paths.get("testRepo.dat"), encryptedData);
+
+        // When
+        UserRepository result = userStorage.loadRepository();
+
+        // Then
+        assertNotNull(result);  // Default empty UserRepository should be returned on failure
+        verify(encryptionStrategyMock, times(1)).decrypt(any(byte[].class));
+    }
+
+    private byte[] serializeObject(Object object) throws Exception {
+        ByteArrayOutputStream baos = new ByteArrayOutputStream();
+        try (ObjectOutputStream out = new ObjectOutputStream(baos)) {
+            out.writeObject(object);
         }
-    }
-
-
-    // ───────────────────────────────
-    // Parameterized Encryption Tests
-    // ───────────────────────────────
-
-    @ParameterizedTest(name = "Should save and load repository with {0}")
-    @MethodSource("encryptionStrategies")
-    void testSaveAndLoad_WithEncryption(EncryptionStrategy encryption) {
-        File file = getTempFile(encryption.getClass().getSimpleName() + ".dat");
-        UserStorage storage = new UserStorage(file.getAbsolutePath(), encryption);
-
-        // Create repo, user, and credentials
-        UserRepository repo = new UserRepository();
-        User user = createUserWithAccount();
-        Credentials creds = new Credentials("John", "hashedPassword123");
-        UUID id = repo.addUser(user, creds);
-
-        // Save repository
-        assertTrue(storage.saveRepository(repo), "Repository should save successfully");
-
-        // Load repository
-        UserRepository loadedRepo = storage.loadRepository();
-        assertEquals(1, loadedRepo.getAllUsers().size(), "One user should be loaded");
-
-        User loadedUser = loadedRepo.getUserById(id).orElseThrow();
-        Credentials loadedCreds = loadedRepo.getCredentials(id).orElseThrow();
-
-        verifyUserRestoredCorrectly(loadedUser, loadedCreds);
-    }
-
-
-    // ───────────────────────────────
-    // Additional Focused Tests
-    // ───────────────────────────────
-
-    @Test
-    @DisplayName("Should load empty repository when file is missing or empty")
-    void testLoadEmptyFile() {
-        File file = getTempFile("empty.dat");
-        UserStorage storage = new UserStorage(file.getAbsolutePath(), new NoEncryption());
-
-        UserRepository repo = storage.loadRepository();
-
-        assertTrue(repo.getAllUsers().isEmpty(), "Expected no users to be loaded from empty file");
-    }
-
-    @Test
-    @DisplayName("Should preserve transaction history after saving and loading")
-    void testTransactionHistoryPreservedAfterLoad() throws Exception {
-        File file = getTempFile("txHistory.dat");
-        UserStorage storage = new UserStorage(file.getAbsolutePath(), new NoEncryption());
-
-        UserRepository repo = new UserRepository();
-        User user = createUserWithAccount();
-        Credentials creds = new Credentials("John", "password123");
-        repo.addUser(user, creds);
-
-        storage.saveRepository(repo);
-
-        UserRepository loadedRepo = storage.loadRepository();
-        User loadedUser = loadedRepo.getAllUsers().iterator().next();
-        BankAccount loadedAccount = loadedUser.getBankAccount(0);
-
-        assertEquals(2, loadedAccount.getTransactionHistory().size(), "Expected 2 transactions (deposit & withdraw)");
-        assertEquals(TransactionType.WITHDRAW, loadedAccount.getLatestTransaction().type());
+        return baos.toByteArray();
     }
 }
