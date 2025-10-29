@@ -2,133 +2,108 @@ package dev.tommy.bankapp.data.budget;
 
 import dev.tommy.bankapp.exceptions.budget.CategoryAlreadyExistsException;
 import dev.tommy.bankapp.exceptions.budget.CategoryDoesNotExistException;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.*;
 
 class BudgetManagerTest {
+
+    private BudgetManager budgetManager;
+
+    @BeforeEach
+    void setUp() {
+        budgetManager = new BudgetManager();
+    }
+
+    // ------------------------------------------------------------------------
+    // Entry management
+    // ------------------------------------------------------------------------
+
     @Test
-    void addEntry_entersCollection() {
-        BudgetManager budgetManager = new BudgetManager();
-        var entry = generateGenericEntry("food");
+    void givenValidEntry_whenAddEntry_thenEntryAddedToCollection() {
+        BudgetEntry entry = new BudgetEntry("Food", 50, BudgetEntry.Type.EXPENSE, "Lunch");
+
         assertDoesNotThrow(() -> budgetManager.addEntry(entry));
         assertEquals(1, budgetManager.getEntries().size());
+        assertTrue(budgetManager.hasEntryWithCategory("Food"));
     }
 
     @Test
-    void removeEntry_entryNotInCollection() {
-        BudgetManager budgetManager = new BudgetManager();
+    void givenDuplicateCategory_whenAddEntry_thenThrowsException() throws CategoryAlreadyExistsException {
+        BudgetEntry entry = new BudgetEntry("Food", 50, BudgetEntry.Type.EXPENSE, "Lunch");
+        budgetManager.addEntry(entry);
 
-        try {
-            budgetManager.removeEntry(0);
-        } catch (CategoryDoesNotExistException e) {
-            return;
-        }
-
-        fail();
+        BudgetEntry duplicate = new BudgetEntry("Food", 100, BudgetEntry.Type.EXPENSE, "Dinner");
+        assertThrows(CategoryAlreadyExistsException.class, () -> budgetManager.addEntry(duplicate));
     }
 
     @Test
-    void removeAllEntries_zeroEntriesRemain() {
-        BudgetManager budgetManager = new BudgetManager();
-        var entry1 = generateGenericEntry("Name1");
-        var entry2 = generateGenericEntry("Name2");
-        try {
-            budgetManager.addEntry(entry1);
-            budgetManager.addEntry(entry2);
-        } catch (CategoryAlreadyExistsException _) { }
+    void givenExistingEntries_whenRemoveAllEntries_thenCollectionIsEmpty() throws CategoryAlreadyExistsException {
+        budgetManager.addEntry(new BudgetEntry("Rent", 1000, BudgetEntry.Type.EXPENSE, ""));
+        budgetManager.addEntry(new BudgetEntry("Salary", 2000, BudgetEntry.Type.INCOME, ""));
 
         budgetManager.removeAllEntries();
-        assertEquals(0, budgetManager.getEntries().size());
+
+        assertTrue(budgetManager.getEntries().isEmpty());
     }
 
     @Test
-    void hasEntry_entryInCollection() {
-        BudgetManager budgetManager = new BudgetManager();
-        var entry = generateGenericEntry("Name1");
-        try {
-            budgetManager.addEntry(entry);
-        } catch (CategoryAlreadyExistsException e) { }
-        assert (budgetManager.hasEntryWithCategory("Name1"));
+    void givenInvalidIndex_whenRemoveEntry_thenThrowsException() {
+        assertThrows(CategoryDoesNotExistException.class, () -> budgetManager.removeEntry(0));
+    }
+
+    // ------------------------------------------------------------------------
+    // Existence checks
+    // ------------------------------------------------------------------------
+
+    @Test
+    void givenEntryAdded_whenHasEntryWithCategory_thenReturnsTrue() throws CategoryAlreadyExistsException {
+        budgetManager.addEntry(new BudgetEntry("Rent", 1000, BudgetEntry.Type.EXPENSE, ""));
+        assertTrue(budgetManager.hasEntryWithCategory("Rent"));
     }
 
     @Test
-    void hasEntry_entryNotInCollection() {
-        BudgetManager budgetManager = new BudgetManager();
-        assertFalse(budgetManager.hasEntryWithCategory("Name1"));
+    void givenNoEntries_whenHasEntryWithCategory_thenReturnsFalse() {
+        assertFalse(budgetManager.hasEntryWithCategory("Nonexistent"));
     }
 
+    // ------------------------------------------------------------------------
+    // Calculations
+    // ------------------------------------------------------------------------
+
     @Test
-    void getNetMonthlyBalance_neutral() {
-        BudgetManager budgetManager = new BudgetManager();
-        var incomeEntry = generateGenericEntry("Income", BudgetEntry.Type.INCOME, 1);
-        var expenseEntry = generateGenericEntry("Expense", BudgetEntry.Type.EXPENSE, 1);
-        try {
-            budgetManager.addEntry(incomeEntry);
-            budgetManager.addEntry(expenseEntry);
-        } catch (CategoryAlreadyExistsException e) {
-            fail();
-        }
+    void givenEqualIncomeAndExpense_whenGetNetMonthlyBalance_thenReturnsZero() throws CategoryAlreadyExistsException {
+        budgetManager.addEntry(new BudgetEntry("Job", 1000, BudgetEntry.Type.INCOME, ""));
+        budgetManager.addEntry(new BudgetEntry("Rent", 1000, BudgetEntry.Type.EXPENSE, ""));
         assertEquals(0, budgetManager.getNetMonthlyBalance());
     }
 
     @Test
-    void getNetMonthlyBalance_moreIncome() {
-        BudgetManager budgetManager = new BudgetManager();
-        var incomeEntry = generateGenericEntry("Income", BudgetEntry.Type.INCOME, 1);
-        try {
-            budgetManager.addEntry(incomeEntry);
-        } catch (CategoryAlreadyExistsException e) {
-            fail();
-        }
-        assertEquals(1, budgetManager.getNetMonthlyBalance());
+    void givenMoreIncomeThanExpenses_whenGetNetMonthlyBalance_thenReturnsPositive() throws CategoryAlreadyExistsException {
+        budgetManager.addEntry(new BudgetEntry("Job", 1500, BudgetEntry.Type.INCOME, ""));
+        budgetManager.addEntry(new BudgetEntry("Rent", 1000, BudgetEntry.Type.EXPENSE, ""));
+        assertEquals(500, budgetManager.getNetMonthlyBalance());
     }
 
     @Test
-    void getNetMonthlyBalance_moreExpenses() {
-        BudgetManager budgetManager = new BudgetManager();
-        var expenseEntry = generateGenericEntry("Expense", BudgetEntry.Type.EXPENSE, 1);
-        try {
-            budgetManager.addEntry(expenseEntry);
-        } catch (CategoryAlreadyExistsException e) {
-            fail();
-        }
-        assertEquals(-1, budgetManager.getNetMonthlyBalance());
+    void givenMoreExpensesThanIncome_whenGetNetMonthlyBalance_thenReturnsNegative() throws CategoryAlreadyExistsException {
+        budgetManager.addEntry(new BudgetEntry("Job", 1000, BudgetEntry.Type.INCOME, ""));
+        budgetManager.addEntry(new BudgetEntry("Rent", 1200, BudgetEntry.Type.EXPENSE, ""));
+        assertEquals(-200, budgetManager.getNetMonthlyBalance());
     }
 
     @Test
-    void getTotalExpenses() {
-        BudgetManager budgetManager = new BudgetManager();
-        var expenseEntry1 = generateGenericEntry("Expense1", BudgetEntry.Type.EXPENSE, 1);
-        var expenseEntry2 = generateGenericEntry("Expense2", BudgetEntry.Type.EXPENSE, 1);
-        try {
-            budgetManager.addEntry(expenseEntry1);
-            budgetManager.addEntry(expenseEntry2);
-        } catch (CategoryAlreadyExistsException e) {
-            fail();
-        }
-        assertEquals(2, budgetManager.getTotalExpenses());
+    void givenMultipleExpenses_whenGetTotalExpenses_thenSumsCorrectly() throws CategoryAlreadyExistsException {
+        budgetManager.addEntry(new BudgetEntry("Rent", 1000, BudgetEntry.Type.EXPENSE, ""));
+        budgetManager.addEntry(new BudgetEntry("Utilities", 300, BudgetEntry.Type.EXPENSE, ""));
+        assertEquals(1300, budgetManager.getTotalExpenses());
     }
 
     @Test
-    void getTotalIncome() {
-        BudgetManager budgetManager = new BudgetManager();
-        var incomeEntry1 = generateGenericEntry("Income1", BudgetEntry.Type.INCOME, 1);
-        var incomeEntry2 = generateGenericEntry("Income2", BudgetEntry.Type.INCOME, 1);
-        try {
-            budgetManager.addEntry(incomeEntry1);
-            budgetManager.addEntry(incomeEntry2);
-        } catch (CategoryAlreadyExistsException e) {
-            fail();
-        }
-        assertEquals(2, budgetManager.getTotalIncome());
-    }
-
-    BudgetEntry generateGenericEntry(String category) {
-        return new BudgetEntry(category, 1, BudgetEntry.Type.EXPENSE, "notes");
-    }
-
-    BudgetEntry generateGenericEntry(String category, BudgetEntry.Type type, double amount) {
-        return new BudgetEntry(category, amount, type, "notes");
+    void givenMultipleIncomes_whenGetTotalIncome_thenSumsCorrectly() throws CategoryAlreadyExistsException {
+        budgetManager.addEntry(new BudgetEntry("Job", 1500, BudgetEntry.Type.INCOME, ""));
+        budgetManager.addEntry(new BudgetEntry("Freelance", 500, BudgetEntry.Type.INCOME, ""));
+        assertEquals(2000, budgetManager.getTotalIncome());
     }
 }

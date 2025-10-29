@@ -1,77 +1,100 @@
 package dev.tommy.bankapp.cli;
 
-import dev.tommy.bankapp.cli.models.MenuArguments;
-import dev.tommy.bankapp.cli.utils.CLIUtils;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
-import java.time.LocalDateTime;
-import java.util.Optional;
+import java.io.*;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import static org.junit.jupiter.api.Assertions.*;
 
 class WordMenuTest {
+
+    private ByteArrayOutputStream outContent;
+
+    @BeforeEach
+    void setupStreams() {
+        outContent = new ByteArrayOutputStream();
+    }
+
+    private WordMenu buildMenuWithInput(String input, boolean autoExit, AtomicInteger counter) {
+        InputStream testIn = new ByteArrayInputStream(input.getBytes());
+        WordMenu menu = new WordMenu("Test Menu", autoExit, testIn, new PrintStream(outContent));
+
+        menu.addItem("run", "Increment counter", args -> {
+            counter.incrementAndGet();
+            return MenuOperation.CONTINUE;
+        });
+
+        menu.addItem("exit", "Exit menu", args -> MenuOperation.EXIT);
+
+        return menu;
+    }
+
     @Test
-    void wordMenuTest() {
-        // Simulate CLI args after combining quotes
-        String input =
-                "-s 2025-10-27 10:00:00 -e 2025-10-27 15:00:00 -n 42";
+    void testValidCommand() {
+        AtomicInteger counter = new AtomicInteger(0);
+        WordMenu menu = buildMenuWithInput("run\nexit\n", false, counter);
 
-        var args = CLIUtils.getSplitArgs(input);
-        assertEquals("-s", args[0]);
-        assertEquals("2025-10-27", args[1]);
+        // Run menu until exit
+        MenuOperation op;
+        do {
+            menu.display();
+            op = menu.handleInput();
+        } while (op != MenuOperation.EXIT);
 
-        MenuArguments menuArgs = new MenuArguments(args);
+        assertEquals(1, counter.get());
+        String output = outContent.toString();
+        assertTrue(output.contains("Test Menu"));
+        assertTrue(output.contains("> "));
+    }
 
-        try {
-            Optional<LocalDateTime> startOpt = menuArgs.tryGetOptionalDateTimeArgument("-s", true);
-            assertTrue(startOpt.isPresent());
-            assertEquals(LocalDateTime.of(2025, 10, 27, 10, 0, 0), startOpt.get());
-        } catch (ArgumentParseException e) {
-            fail();
-        }
+    @Test
+    void testHelpCommand() {
+        AtomicInteger counter = new AtomicInteger(0);
+        WordMenu menu = buildMenuWithInput("help\nexit\n", false, counter);
 
-        try {
-            Optional<LocalDateTime> endOpt = menuArgs.tryGetOptionalDateTimeArgument("-e", false);
-            assertTrue(endOpt.isPresent());
-            assertEquals(LocalDateTime.of(2025, 10, 27, 15, 0, 0), endOpt.get());
-        } catch (ArgumentParseException e) {
-            fail();
-        }
+        // Run first input (help)
+        menu.display();
+        MenuOperation op1 = menu.handleInput();
+        assertEquals(MenuOperation.CONTINUE, op1);
 
-        // Parse an integer argument
-        Optional<Integer> numberOpt = Optional.empty();
-        try {
-            numberOpt = menuArgs.tryGetOptionalArgument(
-                    "-n",
-                    Integer::parseInt
-            );
-        } catch (ArgumentParseException e) {
-            fail();
-        }
+        String output = outContent.toString();
+        assertTrue(output.contains("Available commands"));
+        assertTrue(output.contains("run"));
+        assertTrue(output.contains("exit"));
 
-        assertTrue(numberOpt.isPresent());
-        assertEquals(42, numberOpt.get());
+        // Run exit command
+        menu.display();
+        MenuOperation op2 = menu.handleInput();
+        assertEquals(MenuOperation.EXIT, op2);
+    }
 
+    @Test
+    void testInvalidCommandAutoExitFalse() {
+        AtomicInteger counter = new AtomicInteger(0);
+        WordMenu menu = buildMenuWithInput("invalid\nexit\n", false, counter);
 
+        // First input: invalid
+        menu.display();
+        MenuOperation op1 = menu.handleInput();
+        assertEquals(MenuOperation.CONTINUE, op1);
+        assertTrue(outContent.toString().contains("Invalid command"));
 
+        // Second input: exit
+        menu.display();
+        MenuOperation op2 = menu.handleInput();
+        assertEquals(MenuOperation.EXIT, op2);
+    }
 
-        // Case 2: only date, no time
-        String input2 = "-s 2025-10-28 -e 2025-10-29";
-        var args2 = CLIUtils.getSplitArgs(input2);
-        MenuArguments menuArgs2 = new MenuArguments(args2);
+    @Test
+    void testInvalidCommandAutoExitTrue() {
+        AtomicInteger counter = new AtomicInteger(0);
+        WordMenu menu = buildMenuWithInput("invalid\n", true, counter);
 
-        try {
-            Optional<LocalDateTime> startOpt = menuArgs2.tryGetOptionalDateTimeArgument("-s", true);
-            assertTrue(startOpt.isPresent());
-            // Should default to 00:00:00 for start
-            assertEquals(LocalDateTime.of(2025, 10, 28, 0, 0, 0), startOpt.get());
-
-            Optional<LocalDateTime> endOpt = menuArgs2.tryGetOptionalDateTimeArgument("-e", false);
-            assertTrue(endOpt.isPresent());
-            // Should default to 23:59:59 for end
-            assertEquals(LocalDateTime.of(2025, 10, 29, 23, 59, 59), endOpt.get());
-        } catch (ArgumentParseException e) {
-            fail(e);
-        }
+        menu.display();
+        MenuOperation op = menu.handleInput();
+        assertEquals(MenuOperation.EXIT, op);
+        assertTrue(outContent.toString().contains("Invalid command"));
     }
 }

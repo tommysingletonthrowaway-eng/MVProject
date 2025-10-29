@@ -5,7 +5,7 @@ import dev.tommy.bankapp.exceptions.user.UserNotFoundException;
 import java.util.*;
 import java.util.stream.Collectors;
 
-public class UserRepository {
+public class UserRepository implements IUserRepository {
     private final Map<String, User> users;
 
     public UserRepository() {

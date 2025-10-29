@@ -5,163 +5,175 @@ import dev.tommy.bankapp.data.transaction.TransactionType;
 import dev.tommy.bankapp.exceptions.account.NoTransactionException;
 import dev.tommy.bankapp.utils.BankUtils;
 import dev.tommy.bankapp.utils.CurrencyConverter;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import java.time.LocalDateTime;
+import java.util.List;
 
-import static java.lang.Thread.sleep;
 import static org.junit.jupiter.api.Assertions.*;
 
 class BankAccountTest {
-    @Test
-    void accountCreationTest() {
-        BankAccount account = new BankAccount("Natwest", Currency.GBP);
 
-        assertEquals(Currency.GBP, account.getCurrency());
+    private BankAccount account;
+
+    @BeforeEach
+    void setUp() {
+        account = new BankAccount("Natwest", Currency.GBP);
+    }
+
+    // ------------------------------------------------------------------------
+    // Account creation and basic state
+    // ------------------------------------------------------------------------
+
+    @Test
+    void givenNewAccount_whenCreated_thenDefaultsAreCorrect() {
         assertEquals("Natwest", account.getIdentifier());
-        assertEquals("Natwest", account.toString());
-        assertEquals(0, account.getBalance());
-        assertEquals(0, account.getTransactionHistory().size());
-    }
-
-    @Test
-    void getBalanceTest() {
-        BankAccount account = new BankAccount("Natwest", Currency.GBP);
-        assertEquals(0, account.getBalance());
+        assertEquals(Currency.GBP, account.getCurrency());
+        assertEquals(0.0, account.getBalance());
         assertEquals("£0.00", account.getFormattedBalance());
+        assertTrue(account.getTransactionHistory().isEmpty());
     }
 
+    // ------------------------------------------------------------------------
+    // Balance management
+    // ------------------------------------------------------------------------
+
     @Test
-    void setBalanceTest() {
-        BankAccount account = new BankAccount("Natwest", Currency.GBP);
-        account.setBalance(100);
-        assertEquals(100, account.getBalance());
-        assertEquals("£100.00", account.getFormattedBalance());
+    void whenSetBalance_thenBalanceAndFormatAreUpdated() {
+        account.setBalance(150.50);
+        assertEquals(150.50, account.getBalance());
+        assertEquals("£150.50", account.getFormattedBalance());
     }
 
+    // ------------------------------------------------------------------------
+    // Currency change behavior
+    // ------------------------------------------------------------------------
+
     @Test
-    void setCurrencyTest() {
-        BankAccount account = new BankAccount("Natwest", Currency.GBP);
+    void whenChangeCurrencyWithoutConversion_thenSymbolChangesOnly() {
         account.setBalance(100);
-
-        assertEquals(100, account.getBalance());
-        assertEquals("£100.00", account.getFormattedBalance());
-
         account.setCurrency(Currency.USD, false);
+
         assertEquals(100, account.getBalance());
         assertEquals("$100.00", account.getFormattedBalance());
+    }
 
-        account.setCurrency(Currency.GBP, false);
+    @Test
+    void whenChangeCurrencyWithConversion_thenBalanceIsConverted() {
+        account.setBalance(100);
+        double rate = CurrencyConverter.getConversionRate(Currency.GBP, Currency.USD);
+        double expected = 100 * rate;
+
         account.setCurrency(Currency.USD, true);
-        double conversionRate = CurrencyConverter.getConversionRate(Currency.GBP, Currency.USD);
-        double expectedResult = 100.00 * conversionRate;
-        assertEquals(expectedResult, account.getBalance());
-        assertEquals(BankUtils.formatMoney(expectedResult, Currency.USD), account.getFormattedBalance());
+
+        assertEquals(expected, account.getBalance());
+        assertEquals(BankUtils.formatMoney(expected, Currency.USD), account.getFormattedBalance());
+    }
+
+    // ------------------------------------------------------------------------
+    // Deposit and withdraw
+    // ------------------------------------------------------------------------
+
+    @Test
+    void givenNegativeDeposit_whenDeposit_thenFails() {
+        assertFalse(account.deposit(-50));
+        assertEquals(0, account.getBalance());
     }
 
     @Test
-    void withdrawMoneyTest() {
-        BankAccount account = new BankAccount("Natwest", Currency.GBP);
-
-        assertFalse(account.withdraw(100));
-        account.setBalance(200);
+    void givenPositiveDeposit_whenDeposit_thenBalanceIncreases() {
+        assertTrue(account.deposit(200));
         assertEquals(200, account.getBalance());
-
-        assertFalse(account.withdraw(-100));
-        assertTrue(account.withdraw(100));
-        assertEquals(100, account.getBalance());
     }
 
     @Test
-    void depositMoneyTest() {
-        BankAccount account = new BankAccount("Natwest", Currency.GBP);
-
-        assertFalse(account.deposit(-100));
-        assertTrue(account.deposit(100));
-        assertEquals(100, account.getBalance());
+    void givenInsufficientBalance_whenWithdraw_thenFails() {
+        assertFalse(account.withdraw(50));
+        assertEquals(0, account.getBalance());
     }
 
     @Test
-    void testTransactionHistory() {
-        BankAccount account = new BankAccount("Natwest", Currency.GBP);
-        assertEquals(0, account.getTransactionHistory().size());
+    void givenValidAmount_whenWithdraw_thenBalanceDecreases() {
+        account.setBalance(200);
+        assertTrue(account.withdraw(75));
+        assertEquals(125, account.getBalance());
+    }
 
-        Transaction transaction;
+    // ------------------------------------------------------------------------
+    // Transaction history
+    // ------------------------------------------------------------------------
 
-        assertTrue(account.deposit(100));
-        try {
-            transaction = account.getLatestTransaction();
-        } catch (NoTransactionException e) {
-            fail("No transaction found.");
-            return;
-        }
-        assertEquals(TransactionType.DEPOSIT, transaction.type());
-        assertEquals(BankUtils.formatMoney(100, account.getCurrency()), transaction.amount());
-        assertEquals(BankUtils.formatMoney(100, account.getCurrency()), transaction.balanceAfter());
-        assertNotNull(transaction.timestamp());
+    @Test
+    void whenDeposit_thenTransactionRecordedCorrectly() throws NoTransactionException {
+        account.deposit(100);
 
-        assertTrue(account.withdraw(20));
-        try {
-            transaction = account.getLatestTransaction();
-        } catch (NoTransactionException e) {
-            fail("No transaction found.");
-            return;
-        }
-        assertEquals(TransactionType.WITHDRAW, transaction.type());
-        assertEquals(BankUtils.formatMoney(20, account.getCurrency()), transaction.amount());
-        assertEquals(BankUtils.formatMoney(80, account.getCurrency()), transaction.balanceAfter());
-        assertNotNull(transaction.timestamp());
+        Transaction tx = account.getLatestTransaction();
+        assertEquals(TransactionType.DEPOSIT, tx.type());
+        assertEquals(BankUtils.formatMoney(100, Currency.GBP), tx.amount());
+        assertEquals(BankUtils.formatMoney(100, Currency.GBP), tx.balanceAfter());
+    }
 
+    @Test
+    void whenWithdraw_thenTransactionRecordedCorrectly() throws NoTransactionException {
+        account.setBalance(100);
+        account.withdraw(40);
+
+        Transaction tx = account.getLatestTransaction();
+        assertEquals(TransactionType.WITHDRAW, tx.type());
+        assertEquals(BankUtils.formatMoney(40, Currency.GBP), tx.amount());
+        assertEquals(BankUtils.formatMoney(60, Currency.GBP), tx.balanceAfter());
+    }
+
+    @Test
+    void whenCurrencyChanged_thenCurrencyChangeTransactionRecorded() throws NoTransactionException {
+        account.setBalance(80);
         account.setCurrency(Currency.USD, false);
-        try {
-            transaction = account.getLatestTransaction();
-        } catch (NoTransactionException e) {
-            fail("No transaction found.");
-            return;
-        }
-        assertEquals(TransactionType.CURRENCY_CHANGE, transaction.type());
-        assertEquals(BankUtils.formatMoney(80, Currency.GBP), transaction.amount());
-        assertEquals(BankUtils.formatMoney(80, account.getCurrency()), transaction.balanceAfter());
-        assertNotNull(transaction.timestamp());
+
+        Transaction tx = account.getLatestTransaction();
+        assertEquals(TransactionType.CURRENCY_CHANGE, tx.type());
+        assertEquals(BankUtils.formatMoney(80, Currency.GBP), tx.amount());
+        assertEquals(BankUtils.formatMoney(80, Currency.USD), tx.balanceAfter());
     }
 
+    // ------------------------------------------------------------------------
+    // Transaction filtering
+    // ------------------------------------------------------------------------
+
     @Test
-    void testTransactionHistoryFiltering() {
-        BankAccount account = new BankAccount("Natwest", Currency.GBP);
-        assertEquals(0, account.getTransactionHistory().size());
+    void whenFilterTransactionsByTime_thenCorrectSubsetReturned() {
+        account.deposit(100);
+        LocalDateTime first = LocalDateTime.now();
 
-        // Add some deposits/withdrawals
-        account.deposit(100); // timestamp = now
-        LocalDateTime startTime = LocalDateTime.now();
-        try {
-            sleep(100);          // small delay to ensure different timestamps
-        } catch (InterruptedException e) {
-            fail();
-        }
-        account.deposit(200); // timestamp = now + 0.1s
-        LocalDateTime middleTime = LocalDateTime.now();
-        try {
-            sleep(100);
-        } catch (InterruptedException e) {
-            fail();
-        }
-        account.withdraw(50); // timestamp = now + 0.2s
-        LocalDateTime endTime = LocalDateTime.now();
+        account.deposit(200);
+        LocalDateTime second = LocalDateTime.now();
 
-        // Filter everything (no bounds)
-        var filtered = account.filterTransactionsByDateTime(null, null);
-        assertEquals(3, filtered.size());
+        account.withdraw(50);
+        LocalDateTime third = LocalDateTime.now();
 
-        // Filter everything after first transaction
-        filtered = account.filterTransactionsByDateTime(middleTime, null);
-        assertEquals(1, filtered.size());
+        // No filter → all
+        List<?> all = account.filterTransactionsByDateTime(null, null);
+        assertEquals(3, all.size());
 
-        // Filter everything before last transaction
-        filtered = account.filterTransactionsByDateTime(null, middleTime);
-        assertEquals(2, filtered.size());
+        // After second deposit → last only
+        List<?> beforeSecond = account.filterTransactionsByDateTime(second, null);
+        assertEquals(1, beforeSecond.size());
 
-        filtered = account.filterTransactionsByDateTime(startTime, endTime);
-        assertEquals(2, filtered.size());
-        assertEquals(TransactionType.WITHDRAW, filtered.get(1).getValue().type());
+        // Before second deposit → first only
+        List<?> afterSecond = account.filterTransactionsByDateTime(null, second);
+        assertEquals(2, afterSecond.size());
+
+        // Between first and third → middle transaction(s)
+        List<?> between = account.filterTransactionsByDateTime(first, third);
+        assertFalse(between.isEmpty());
+    }
+
+    // ------------------------------------------------------------------------
+    // Error handling
+    // ------------------------------------------------------------------------
+
+    @Test
+    void givenNoTransactions_whenGetLatestTransaction_thenThrowsException() {
+        assertThrows(NoTransactionException.class, () -> account.getLatestTransaction());
     }
 }

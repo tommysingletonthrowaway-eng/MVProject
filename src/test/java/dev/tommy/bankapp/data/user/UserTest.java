@@ -3,129 +3,132 @@ package dev.tommy.bankapp.data.user;
 import dev.tommy.bankapp.data.BankAccount;
 import dev.tommy.bankapp.data.Currency;
 import dev.tommy.bankapp.exceptions.bankaccount.BankAccountNotFoundException;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+
+import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.*;
 
+@DisplayName("User Entity Tests")
 class UserTest {
+
+    private User user;
+    private BankAccount natwestAccount;
+    private BankAccount hsbcAccount;
+
+    @BeforeEach
+    void setUp() {
+        user = new User("John", "password");
+        natwestAccount = new BankAccount("Natwest", Currency.GBP);
+        hsbcAccount = new BankAccount("HSBC", Currency.GBP);
+    }
+
+    // ───────────────────────────
+    // User Credentials Tests
+    // ───────────────────────────
+
     @Test
-    void getUsername() {
-        User user = new User("John", "password");
+    @DisplayName("Should return correct username")
+    void testGetUsername() {
         assertEquals("John", user.getUsername());
         assertNotEquals("Jim", user.getUsername());
     }
 
     @Test
-    void changePassword() {
-        String originalPassword = "password";
-        User user = new User("John", originalPassword);
-        assertTrue(user.checkPassword(originalPassword));
-
+    @DisplayName("Should change password successfully")
+    void testChangePassword() {
         String newPassword = "newPassword";
+
+        assertTrue(user.checkPassword("password"), "Original password should be valid");
+
         user.changePassword(newPassword);
-        assertTrue(user.checkPassword(newPassword));
-        assertFalse(user.checkPassword(originalPassword));
+
+        assertTrue(user.checkPassword(newPassword), "New password should be valid");
+        assertFalse(user.checkPassword("password"), "Old password should no longer be valid");
     }
 
     @Test
-    void changeUsername() {
-        String originalUsername = "John";
-        User user = new User(originalUsername, "password");
-        assertEquals(originalUsername, user.getUsername());
-
+    @DisplayName("Should change username successfully")
+    void testChangeUsername() {
         String newUsername = "Dave";
+
+        assertEquals("John", user.getUsername());
+
         user.changeUsername(newUsername);
-        assertNotEquals(originalUsername, user.getUsername());
+
         assertEquals(newUsername, user.getUsername());
+        assertNotEquals("John", user.getUsername());
     }
 
     @Test
-    void checkPassword() {
-        String password = "password";
-        User user = new User("John", password);
-        assertTrue(user.checkPassword(password));
-        assertFalse(user.checkPassword("pringles"));
+    @DisplayName("Should verify password correctly")
+    void testCheckPassword() {
+        assertTrue(user.checkPassword("password"));
+        assertFalse(user.checkPassword("wrongPassword"));
+    }
+
+    // ───────────────────────────
+    // Bank Account Tests
+    // ───────────────────────────
+
+    @Test
+    @DisplayName("Should add and retrieve bank accounts correctly")
+    void testAddAndGetBankAccounts() {
+        assertTrue(user.getBankAccounts().isEmpty());
+
+        user.addBankAccount(natwestAccount);
+        user.addBankAccount(hsbcAccount);
+
+        List<BankAccount> accounts = user.getBankAccounts();
+        assertEquals(2, accounts.size());
+        assertTrue(accounts.contains(natwestAccount));
+        assertTrue(accounts.contains(hsbcAccount));
     }
 
     @Test
-    void getBankAccount() {
-        User user = new User("John", "password");
-        BankAccount bankAccount = new BankAccount("Natwest", Currency.GBP);
-        user.addBankAccount(bankAccount);
+    @DisplayName("Should retrieve bank account by name or index")
+    void testGetBankAccount() throws BankAccountNotFoundException {
+        user.addBankAccount(natwestAccount);
 
-        try {
-            assertEquals(bankAccount, user.getBankAccount("Natwest"));
-        } catch (BankAccountNotFoundException e) {
-            fail();
-        }
+        // By name
+        assertEquals(natwestAccount, user.getBankAccount("Natwest"));
 
-        try {
-            assertNull(user.getBankAccount("HSBC"));
-        } catch (BankAccountNotFoundException _) { }
+        // Invalid name should throw exception
+        assertThrows(BankAccountNotFoundException.class, () -> user.getBankAccount("Barclays"));
 
-        try {
-            assertEquals(bankAccount, user.getBankAccount(0));
-        } catch (BankAccountNotFoundException e) {
-            fail();
-        }
+        // By index
+        assertEquals(natwestAccount, user.getBankAccount(0));
 
-        try {
-            assertNull(user.getBankAccount(3));
-        } catch (BankAccountNotFoundException _) { }
+        // Invalid index should throw exception
+        assertThrows(BankAccountNotFoundException.class, () -> user.getBankAccount(3));
     }
 
     @Test
-    void getBankAccounts() {
-        User user = new User("John", "password");
-        BankAccount bankAccount1 = new BankAccount("Natwest", Currency.GBP);
-        BankAccount bankAccount2 = new BankAccount("Natwest", Currency.GBP);
-
-        var accounts = user.getBankAccounts();
-        assertFalse(accounts.contains(bankAccount1));
-        assertFalse(accounts.contains(bankAccount2));
-        user.addBankAccount(bankAccount1);
-        user.addBankAccount(bankAccount2);
-
-        var newAccounts = user.getBankAccounts();
-        assertEquals(2, newAccounts.size());
-        assertTrue(newAccounts.contains(bankAccount1));
-        assertTrue(newAccounts.contains(bankAccount2));
-    }
-
-    @Test
-    void addBankAccount() {
-        User user = new User("John", "password");
-        BankAccount bankAccount = new BankAccount("Natwest", Currency.GBP);
-
-        assertFalse(user.getBankAccounts().contains(bankAccount));
-        user.addBankAccount(bankAccount);
-        assertEquals(1, user.getBankAccounts().size());
-        assertTrue(user.getBankAccounts().contains(bankAccount));
-
-    }
-
-    @Test
-    void hasAccountNamed() {
-        User user = new User("John", "password");
-        BankAccount bankAccount = new BankAccount("Natwest", Currency.GBP);
-        user.addBankAccount(bankAccount);
+    @DisplayName("Should confirm existence of account by name")
+    void testHasAccountNamed() {
+        user.addBankAccount(natwestAccount);
 
         assertTrue(user.hasAccountNamed("Natwest"));
         assertFalse(user.hasAccountNamed("HSBC"));
     }
 
     @Test
-    void deleteBankAccount() {
-        User user = new User("John", "password");
-        BankAccount bankAccount = new BankAccount("Natwest", Currency.GBP);
-        user.addBankAccount(bankAccount);
-
+    @DisplayName("Should remove bank account successfully")
+    void testRemoveBankAccount() throws BankAccountNotFoundException {
+        user.addBankAccount(natwestAccount);
         assertTrue(user.hasAccountNamed("Natwest"));
-        try {
-            user.removeBankAccount(bankAccount);
-        } catch (BankAccountNotFoundException e) {
-            fail();
-        }
+
+        user.removeBankAccount(natwestAccount);
+
         assertFalse(user.hasAccountNamed("Natwest"));
+        assertTrue(user.getBankAccounts().isEmpty());
+    }
+
+    @Test
+    @DisplayName("Should throw when removing non-existent account")
+    void testRemoveNonExistentBankAccountThrows() {
+        assertThrows(BankAccountNotFoundException.class, () -> user.removeBankAccount(natwestAccount));
     }
 }

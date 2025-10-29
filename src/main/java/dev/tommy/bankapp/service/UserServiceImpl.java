@@ -1,7 +1,7 @@
 package dev.tommy.bankapp.service;
 
+import dev.tommy.bankapp.data.user.IUserRepository;
 import dev.tommy.bankapp.data.user.User;
-import dev.tommy.bankapp.data.user.UserRepository;
 import dev.tommy.bankapp.exceptions.user.DuplicateUserException;
 import dev.tommy.bankapp.exceptions.user.InvalidPasswordException;
 import dev.tommy.bankapp.exceptions.user.InvalidUsernameException;
@@ -11,11 +11,11 @@ import dev.tommy.bankapp.validator.Validator;
 import java.util.Collection;
 
 public class UserServiceImpl implements UserService {
-    private final UserRepository userRepository;
+    private final IUserRepository userRepository;
     private final Validator usernameValidator;
     private final Validator passwordValidator;
 
-    public UserServiceImpl(UserRepository userRepository, Validator usernameValidator, Validator passwordValidator) {
+    public UserServiceImpl(IUserRepository userRepository, Validator usernameValidator, Validator passwordValidator) {
         this.userRepository = userRepository;
         this.usernameValidator = usernameValidator;
         this.passwordValidator = passwordValidator;
