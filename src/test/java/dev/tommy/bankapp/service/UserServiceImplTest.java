@@ -1,179 +1,140 @@
 package dev.tommy.bankapp.service;
 
-import dev.tommy.bankapp.data.user.User;
-import dev.tommy.bankapp.data.user.UserRepository;
-import dev.tommy.bankapp.data.user.UserStorage;
+import dev.tommy.bankapp.data.user.*;
+import dev.tommy.bankapp.encryption.NoEncryption;
 import dev.tommy.bankapp.exceptions.user.*;
+import dev.tommy.bankapp.validator.PasswordValidator;
+import dev.tommy.bankapp.validator.UsernameValidator;
 import dev.tommy.bankapp.validator.Validator;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.*;
+import org.junit.jupiter.api.io.TempDir;
 
-import java.util.Collections;
-import java.util.Optional;
-
+import java.nio.file.Path;
+import java.util.*;
 import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.Mockito.*;
 
+public class UserServiceImplTest {
 
-class UserServiceImplTest {
-
+    private UserServiceImpl userService;
     private UserRepository userRepository;
+    private UserStorage userStorage;
     private Validator usernameValidator;
     private Validator passwordValidator;
-    private UserServiceImpl userService;
+
+    @TempDir
+    Path tempDir;
 
     @BeforeEach
     void setUp() {
-        userRepository = mock(UserRepository.class);
-        UserStorage userStorage = mock(UserStorage.class);
-        usernameValidator = mock(Validator.class);
-        passwordValidator = mock(Validator.class);
+        Path tempFile = tempDir.resolve("userRepoTest.json");
+        userRepository = new UserRepository();
+        userStorage = new UserStorage(tempFile.toString(), new NoEncryption());
+        usernameValidator = new UsernameValidator();
+        passwordValidator = new PasswordValidator();
         userService = new UserServiceImpl(userRepository, userStorage, usernameValidator, passwordValidator);
     }
 
+    // --- REGISTER TESTS ---
     @Test
-    void registerUserShouldSucceed() throws Exception {
-        String username = "John";
-        String password = "pass123";
+    void registerUser_ShouldCreateNewUser() throws Exception {
+        userService.registerUser("tommy", "secure123");
 
-        when(usernameValidator.isValid(username)).thenReturn(true);
-        when(passwordValidator.isValid(password)).thenReturn(true);
-
-        userService.registerUser(username, password);
+        assertTrue(userRepository.existsByUsername("tommy"));
+        assertEquals(1, userRepository.getUsernames().size());
     }
 
     @Test
-    void registerUserInvalidUsernameShouldThrow() {
-        String username = "invalid!";
-        String password = "pass123";
-
-        when(usernameValidator.isValid(username)).thenReturn(false);
-        when(usernameValidator.getErrorMessage()).thenReturn("Invalid username");
-
-        InvalidUsernameException exception = assertThrows(
-                InvalidUsernameException.class,
-                () -> userService.registerUser(username, password)
-        );
-
-        assertEquals("Invalid username", exception.getMessage());
+    void registerUser_ShouldThrowDuplicateUserException() throws Exception {
+        userService.registerUser("tommy", "secure123");
+        assertThrows(DuplicateUserException.class,
+                () -> userService.registerUser("tommy", "anotherpass"));
     }
 
     @Test
-    void registerUserInvalidPasswordShouldThrow() {
-        String username = "John";
-        String password = "short";
-
-        when(usernameValidator.isValid(username)).thenReturn(true);
-        when(passwordValidator.isValid(password)).thenReturn(false);
-        when(passwordValidator.getErrorMessage()).thenReturn("Invalid password");
-
-        InvalidPasswordException exception = assertThrows(
-                InvalidPasswordException.class,
-                () -> userService.registerUser(username, password)
-        );
-
-        assertEquals("Invalid password", exception.getMessage());
+    void registerUser_ShouldThrowInvalidUsernameException() {
+        assertThrows(InvalidUsernameException.class,
+                () -> userService.registerUser("ab", "secure123"));
     }
 
     @Test
-    void registerDuplicateUserShouldThrow() {
-        String username = "John";
-        String password = "pass123";
+    void registerUser_ShouldThrowInvalidPasswordException() {
+        assertThrows(InvalidPasswordException.class,
+                () -> userService.registerUser("tommy", "12"));
+    }
 
-        when(usernameValidator.isValid(username)).thenReturn(true);
-        when(passwordValidator.isValid(password)).thenReturn(true);
-        when(userRepository.existsByUsername(username)).thenReturn(true);
+    // --- LOGIN TESTS ---
+    @Test
+    void login_ShouldReturnUser_WhenCredentialsCorrect() throws Exception {
+        userService.registerUser("tommy", "secure123");
+        User loggedIn = userService.login("tommy", "secure123");
 
-        assertThrows(DuplicateUserException.class, () -> userService.registerUser(username, password));
+        assertNotNull(loggedIn);
+        assertEquals("tommy", userService.getUsername(loggedIn.getUuid()));
     }
 
     @Test
-    void removeUserShouldCallRepository() throws UserNotFoundException {
-        User user = new User("John", "pass123");
-        userService.removeUser(user);
-        verify(userRepository).remove(user);
+    void login_ShouldThrowInvalidUsernameException_WhenUserNotFound() {
+        assertThrows(InvalidUsernameException.class,
+                () -> userService.login("ghost", "password"));
     }
 
     @Test
-    void getUserByUsernameShouldReturnUser() throws UserNotFoundException {
-        User user = new User("John", "pass123");
-        when(userRepository.findByUsername("John")).thenReturn(Optional.of(user));
+    void login_ShouldThrowInvalidPasswordException_WhenPasswordWrong() throws Exception {
+        userService.registerUser("tommy", "secure123");
+        assertThrows(InvalidPasswordException.class,
+                () -> userService.login("tommy", "wrongpass"));
+    }
 
-        User found = userService.getUserByUsername("John");
-        assertEquals(user, found);
+    // --- CHANGE USERNAME ---
+    @Test
+    void changeUserUsername_ShouldUpdateUsername() throws Exception {
+        userService.registerUser("tommy", "secure123");
+        UUID userId = userRepository.findUserIdByUsername("tommy").get();
+
+        userService.changeUserUsername(userId, "newname");
+        assertTrue(userRepository.existsByUsername("newname"));
     }
 
     @Test
-    void getUserByUsernameNotFoundShouldThrow() {
-        when(userRepository.findByUsername("John")).thenReturn(Optional.empty());
-        assertThrows(UserNotFoundException.class, () -> userService.getUserByUsername("John"));
+    void changeUserUsername_ShouldThrowDuplicateUserException() throws Exception {
+        userService.registerUser("tommy", "secure123");
+        userService.registerUser("bob", "secure123");
+
+        UUID tommyId = userRepository.findUserIdByUsername("tommy").get();
+        assertThrows(DuplicateUserException.class,
+                () -> userService.changeUserUsername(tommyId, "bob"));
     }
 
+    // --- CHANGE PASSWORD ---
     @Test
-    void changeUserUsernameShouldSucceed() throws Exception {
-        User user = new User("John", "pass123");
-        String newUsername = "Alice";
+    void changeUserPassword_ShouldUpdatePassword() throws Exception {
+        userService.registerUser("tommy", "secure123");
+        UUID userId = userRepository.findUserIdByUsername("tommy").get();
 
-        when(usernameValidator.isValid(newUsername)).thenReturn(true);
-        when(userRepository.existsByUsername(newUsername)).thenReturn(false);
-
-        userService.changeUserUsername(user, newUsername);
-        assertEquals(newUsername, user.getUsername());
+        userService.changeUserPassword(userId, "newpassword123");
+        assertDoesNotThrow(() -> userService.login("tommy", "newpassword123"));
     }
 
+    // --- REMOVE USER ---
     @Test
-    void changeUserUsernameInvalidShouldThrow() {
-        User user = new User("John", "pass123");
-        String newUsername = "invalid!";
+    void removeUser_ShouldDeleteUser() throws Exception {
+        userService.registerUser("tommy", "secure123");
+        UUID id = userRepository.findUserIdByUsername("tommy").get();
+        userService.removeUser(id);
 
-        when(usernameValidator.isValid(newUsername)).thenReturn(false);
-        when(usernameValidator.getErrorMessage()).thenReturn("Invalid username");
-
-        assertThrows(InvalidUsernameException.class, () -> userService.changeUserUsername(user, newUsername));
+        assertFalse(userRepository.existsByUsername("tommy"));
     }
 
+    // --- SAVE / LOAD ---
     @Test
-    void changeUserUsernameDuplicateShouldThrow() {
-        User user = new User("John", "pass123");
-        String newUsername = "Alice";
+    void saveAndLoad_ShouldPreserveUsers() throws Exception {
+        userService.registerUser("tommy", "secure123");
+        userService.save();
 
-        when(usernameValidator.isValid(newUsername)).thenReturn(true);
-        when(userRepository.existsByUsername(newUsername)).thenReturn(true);
+        userRepository.clear();
+        assertFalse(userRepository.existsByUsername("tommy"));
 
-        assertThrows(DuplicateUserException.class, () -> userService.changeUserUsername(user, newUsername));
-    }
-
-    @Test
-    void changeUserPasswordShouldSucceed() throws InvalidPasswordException {
-        User user = new User("John", "oldPass");
-        String newPassword = "newPass123";
-
-        when(passwordValidator.isValid(newPassword)).thenReturn(true);
-
-        userService.changeUserPassword(user, newPassword);
-        assertTrue(user.checkPassword(newPassword));
-    }
-
-    @Test
-    void changeUserPasswordInvalidShouldThrow() {
-        User user = new User("John", "oldPass");
-        String newPassword = "123";
-
-        when(passwordValidator.isValid(newPassword)).thenReturn(false);
-        when(passwordValidator.getErrorMessage()).thenReturn("Invalid password");
-
-        assertThrows(InvalidPasswordException.class, () -> userService.changeUserPassword(user, newPassword));
-    }
-
-    @Test
-    void usersShouldReturnAllUsers() {
-        when(userRepository.getAllUsers()).thenReturn(Collections.emptyList());
-        assertNotNull(userService.users());
-    }
-
-    @Test
-    void clearShouldCallRepositoryClear() {
-        userService.clear();
-        verify(userRepository).clear();
+        userService.load();
+        assertTrue(userService.existsByUsername("tommy"));
     }
 }

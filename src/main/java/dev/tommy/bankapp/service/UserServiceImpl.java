@@ -32,8 +32,10 @@ public class UserServiceImpl implements IUserService {
             throw new DuplicateUserException("Username already exists: " + username);
         }
 
-        validateUsername(username);
-        validatePassword(password);
+        if (!validateUsername(username))
+            throw new InvalidUsernameException("Invalid username: " + usernameValidator.getErrorMessage());
+        if (!validatePassword(password))
+            throw new InvalidPasswordException("Invalid password: " + passwordValidator.getErrorMessage());
 
         String hashedPassword = BCrypt.hashpw(password, BCrypt.gensalt());
         Credentials credentials = new Credentials(username, hashedPassword);
@@ -111,11 +113,11 @@ public class UserServiceImpl implements IUserService {
         return this.userRepository.existsByUsername(username);
     }
 
-    private boolean validateUsername(String username) throws InvalidUsernameException {
+    private boolean validateUsername(String username) {
         return this.usernameValidator.isValid(username);
     }
 
-    private boolean validatePassword(String username) throws InvalidPasswordException {
+    private boolean validatePassword(String username) {
         return this.passwordValidator.isValid(username);
     }
 
