@@ -14,8 +14,7 @@ import java.util.Optional;
 
 public class BudgetMenu {
     public static void showMenu(BudgetManager budgetManager) {
-        String title = CLIUtils.getTitle("Manage Your Budget");
-        Menu budgetMenu = new NumberedMenu(title, false, System.in, System.out);
+        Menu budgetMenu = new NumberedMenu(() -> CLIUtils.getTitle("Manage Your Budget"), false, System.in, System.out);
 
         budgetMenu
                 .addItem("Generate budget report", "", args -> {
@@ -68,8 +67,7 @@ public class BudgetMenu {
     }
 
     private static void promptRemoveBudgetEntry(BudgetManager budgetManager) {
-        var title = CLIUtils.getTitle("Remove budget entry");
-        Menu removeEntryMenu = new NumberedMenu(title, true, System.in, System.out );
+        Menu removeEntryMenu = new NumberedMenu(() -> CLIUtils.getTitle("Remove budget entry"), true, System.in, System.out );
 
         for (int i = 1; i < budgetManager.getEntries().size() + 1; i++) {
             var entry = budgetManager.getEntries().get(i - 1);

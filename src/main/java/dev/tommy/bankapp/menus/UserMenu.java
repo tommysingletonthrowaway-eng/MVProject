@@ -13,16 +13,12 @@ import java.util.Optional;
 
 public class UserMenu {
     public static void showUser(User user) {
-        String username;
-        try {
-            username = BankApp.context.userService.getUsername(user.getUuid());
-        } catch (UserNotFoundException e) {
+        Optional<String> username = getUsername(user);
+        if (username.isEmpty()) {
             IO.println("User not found. Returning to main menu.");
             return;
         }
-
-        String title = CLIUtils.getTitle(username);
-        Menu userMenu = new NumberedMenu(title, false, System.in, System.out);
+        Menu userMenu = new NumberedMenu(() -> CLIUtils.getTitle(getUsername(user).get()), false, System.in, System.out);
 
         userMenu
                 .addItem("Open account", "", args -> {
@@ -72,9 +68,16 @@ public class UserMenu {
         userMenu.run();
     }
 
+    private static Optional<String> getUsername(User user) {
+        try {
+            return Optional.of(BankApp.context.userService.getUsername(user.getUuid()));
+        } catch (UserNotFoundException e) {
+            return Optional.empty();
+        }
+    }
+
     private static void promptOpenBankAccount(User user) {
-        String title = CLIUtils.getTitle("Open Bank Account");
-        Menu openAccountMenu = new NumberedMenu(title, true, System.in, System.out);
+        Menu openAccountMenu = new NumberedMenu(() -> CLIUtils.getTitle("Open Bank Account"), true, System.in, System.out);
 
         var accounts = user.getBankAccounts();
         for (BankAccount account : accounts) {
@@ -178,8 +181,7 @@ public class UserMenu {
     }
 
     private static void promptDeleteAccount(User user) {
-        String title = CLIUtils.getTitle("Delete Bank Account");
-        Menu deleteAccountMenu = new NumberedMenu(title, true, System.in, System.out);
+        Menu deleteAccountMenu = new NumberedMenu(() -> CLIUtils.getTitle("Delete Bank Account"), true, System.in, System.out);
 
         var accounts = user.getBankAccounts();
         for (BankAccount account : accounts) {
@@ -269,7 +271,7 @@ public class UserMenu {
             return;
         }
 
-        Menu currencyOptionsMenu = new WordMenu("--- Currency Options ---", true, System.in, System.out);
+        Menu currencyOptionsMenu = new WordMenu(() -> "--- Currency Options ---", true, System.in, System.out);
 
         for (Currency currency : Currency.values()) {
             currencyOptionsMenu.addItem(currency.name(), currency.getSymbol(), args -> {

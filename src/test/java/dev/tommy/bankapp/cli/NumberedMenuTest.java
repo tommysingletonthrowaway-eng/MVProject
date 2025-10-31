@@ -25,7 +25,7 @@ class NumberedMenuTest {
     private Menu createMenu(String input) {
         // Setup input stream for this specific test
         testIn = new ByteArrayInputStream(input.getBytes());
-        return new NumberedMenu("Test Menu", false, testIn, out);
+        return new NumberedMenu(() -> "Test Menu", false, testIn, out);
     }
 
     @Test

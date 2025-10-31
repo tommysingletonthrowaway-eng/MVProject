@@ -5,16 +5,17 @@ import dev.tommy.bankapp.cli.models.MenuItem;
 
 import java.io.InputStream;
 import java.io.PrintStream;
+import java.util.function.Supplier;
 
 public class NumberedMenu extends Menu {
-    public NumberedMenu(String title, boolean autoExit, InputStream in, PrintStream out) {
-        super(title, autoExit, in, out);
+    public NumberedMenu(Supplier<String> titleSupplier, boolean autoExit, InputStream in, PrintStream out) {
+        super(titleSupplier, autoExit, in, out);
     }
 
     @Override
     public void display() {
         out.println();
-        out.println(title);
+        out.println(getTitle());
         for (int i = 0; i < items.size(); i++) {
             out.println("  " + (i + 1) + ". " + items.get(i));
         }

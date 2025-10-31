@@ -9,8 +9,7 @@ import dev.tommy.bankapp.cli.utils.CLIUtils;
 
 public class MainMenu {
     public static void mainMenu() {
-        String title = CLIUtils.getTitle("Bank Management CLI");
-        Menu mainMenu = new NumberedMenu(title, false, System.in, System.out);
+        Menu mainMenu = new NumberedMenu(() -> CLIUtils.getTitle("Bank Management CLI"), false, System.in, System.out);
 
         mainMenu
                 .addItem("Login", "", args -> {

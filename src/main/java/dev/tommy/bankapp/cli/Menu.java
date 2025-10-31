@@ -8,16 +8,17 @@ import java.io.PrintStream;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Scanner;
+import java.util.function.Supplier;
 
 public abstract class Menu {
-    protected String title;
+    protected Supplier<String> titleSupplier;
     protected boolean autoExit;
     protected List<MenuItem> items = new ArrayList<>();
     protected Scanner scanner;
     protected PrintStream out;
 
-    public Menu(String title, boolean autoExit, InputStream in, PrintStream out) {
-        this.title = title;
+    public Menu(Supplier<String> titleSupplier, boolean autoExit, InputStream in, PrintStream out) {
+        this.titleSupplier = titleSupplier;
         this.autoExit = autoExit;
         this.scanner = new Scanner(in);
         this.out = out;
@@ -44,5 +45,9 @@ public abstract class Menu {
                 return;
             }
         }
+    }
+
+    protected String getTitle() {
+        return titleSupplier.get();
     }
 }

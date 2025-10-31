@@ -5,13 +5,14 @@ import dev.tommy.bankapp.cli.utils.CLIUtils;
 
 import java.io.InputStream;
 import java.io.PrintStream;
+import java.util.function.Supplier;
 
 public class ArrowMenu extends Menu {
     private boolean firstRender = true;
     private int selectedIndex = 0;
 
-    public ArrowMenu(String title, boolean autoExit, InputStream in, PrintStream out) {
-        super(title, autoExit, in, out);
+    public ArrowMenu(Supplier<String> titleProvider, boolean autoExit, InputStream in, PrintStream out) {
+        super(titleProvider, autoExit, in, out);
     }
 
     @Override
@@ -23,7 +24,7 @@ public class ArrowMenu extends Menu {
         }
 
         out.println();
-        out.println(title);
+        out.println(getTitle());
         for (int i = 0; i < items.size(); i++) {
             out.println((i == selectedIndex ? "  ->" : "    ") + items.get(i));
         }

@@ -16,8 +16,7 @@ import java.util.Optional;
 
 public class AccountMenu {
     public static void showMenu(BankAccount account) {
-        String menuName = CLIUtils.getTitle(account + " - Account Menu");
-        Menu accountMenu = new WordMenu(menuName, false, System.in, System.out);
+        Menu accountMenu = new WordMenu(() -> CLIUtils.getTitle(account + " - Account Menu"), false, System.in, System.out);
 
         accountMenu
                 .addItem("balance", "Check the balance in the account", args -> {

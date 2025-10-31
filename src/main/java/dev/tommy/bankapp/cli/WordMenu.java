@@ -6,16 +6,17 @@ import dev.tommy.bankapp.cli.utils.CLIUtils;
 
 import java.io.InputStream;
 import java.io.PrintStream;
+import java.util.function.Supplier;
 
 public class WordMenu extends Menu {
-    public WordMenu(String title, boolean autoExit, InputStream in, PrintStream out) {
-        super(title, autoExit, in, out);
+    public WordMenu(Supplier<String> titleProvider, boolean autoExit, InputStream in, PrintStream out) {
+        super(titleProvider, autoExit, in, out);
     }
 
     @Override
     public void display() {
         out.println();
-        out.println(title);
+        out.println(getTitle());
         out.println("Enter your command (use 'help' for a list of commands)");
     }
 

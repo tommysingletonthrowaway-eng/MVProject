@@ -19,7 +19,7 @@ class WordMenuTest {
 
     private WordMenu buildMenuWithInput(String input, boolean autoExit, AtomicInteger counter) {
         InputStream testIn = new ByteArrayInputStream(input.getBytes());
-        WordMenu menu = new WordMenu("Test Menu", autoExit, testIn, new PrintStream(outContent));
+        WordMenu menu = new WordMenu(() -> "Test Menu", autoExit, testIn, new PrintStream(outContent));
 
         menu.addItem("run", "Increment counter", args -> {
             counter.incrementAndGet();
