@@ -170,7 +170,7 @@ public class AccountMenu {
                     + ". New balance: " + account.getFormattedBalance());
         } else {
             if (amount < 0) {
-                IO.println("Deposit unsuccessful. Cannot withdraw negative amount.");
+                IO.println("Deposit unsuccessful. Cannot deposit negative amount.");
             } else {
                 IO.println("Deposit unsuccessful.");
             }
