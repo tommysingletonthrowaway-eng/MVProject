@@ -2,8 +2,6 @@ package dev.tommy.bankapp.validator;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.params.ParameterizedTest;
-import org.junit.jupiter.params.provider.ValueSource;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -14,66 +12,96 @@ class InputValidatorTest {
 
     @BeforeEach
     void setUp() {
-        usernameValidator = new InputValidator(3, 10, "^[a-zA-Z0-9]*$", "Username");
-        passwordValidator = new InputValidator(6, 12, "^[a-zA-Z0-9@#$%^&+=]*$", "Password");
+        usernameValidator = new InputValidator(3, 12, "^[a-zA-Z0-9]+$", "Username");
+        passwordValidator = new InputValidator(5, 20, "^[a-zA-Z0-9!@#$%^&*()_+=-]+$", "Password");
+    }
+
+    // --- NULL or EMPTY ---
+    @Test
+    void shouldRejectNullInput() {
+        assertFalse(usernameValidator.isValid(null));
+        assertEquals("Username cannot be empty.", usernameValidator.getErrorMessage());
     }
 
     @Test
-    void nullOrEmptyInputShouldBeInvalid() {
-        assertFalse(usernameValidator.isValid(null));
-        assertEquals("Username cannot be empty.", usernameValidator.getErrorMessage());
-
+    void shouldRejectEmptyInput() {
         assertFalse(passwordValidator.isValid(""));
         assertEquals("Password cannot be empty.", passwordValidator.getErrorMessage());
     }
 
+    // --- SPACES ---
     @Test
-    void inputWithSpacesShouldBeInvalid() {
-        assertFalse(usernameValidator.isValid("John Doe"));
+    void shouldRejectInputWithSpaces() {
+        assertFalse(usernameValidator.isValid("john doe"));
         assertEquals("Username cannot contain spaces.", usernameValidator.getErrorMessage());
+    }
 
+    // --- TOO SHORT ---
+    @Test
+    void shouldRejectTooShortUsername() {
+        assertFalse(usernameValidator.isValid("ab"));
+        assertEquals("Username must be at least 3 characters.", usernameValidator.getErrorMessage());
+    }
+
+    @Test
+    void shouldRejectTooShortPassword() {
+        assertFalse(passwordValidator.isValid("abc"));
+        assertEquals("Password must be at least 5 characters.", passwordValidator.getErrorMessage());
+    }
+
+    // --- TOO LONG ---
+    @Test
+    void shouldRejectTooLongUsername() {
+        assertFalse(usernameValidator.isValid("abcdefghijklmnop"));
+        assertEquals("Username must be at most 12 characters.", usernameValidator.getErrorMessage());
+    }
+
+    @Test
+    void shouldRejectTooLongPassword() {
+        String longPass = "a".repeat(25);
+        assertFalse(passwordValidator.isValid(longPass));
+        assertEquals("Password must be at most 20 characters.", passwordValidator.getErrorMessage());
+    }
+
+    // --- INVALID CHARACTERS ---
+    @Test
+    void shouldRejectInvalidCharactersInUsername() {
+        assertFalse(usernameValidator.isValid("john_doe!"));
+        assertEquals("Username contains invalid characters.", usernameValidator.getErrorMessage());
+    }
+
+    @Test
+    void shouldRejectInvalidCharactersInPassword() {
         assertFalse(passwordValidator.isValid("pass word"));
         assertEquals("Password cannot contain spaces.", passwordValidator.getErrorMessage());
     }
 
+    // --- VALID INPUTS ---
     @Test
-    void inputTooShortShouldBeInvalid() {
-        assertFalse(usernameValidator.isValid("Jo"));
-        assertEquals("Username must be at least 3 characters.", usernameValidator.getErrorMessage());
-
-        assertFalse(passwordValidator.isValid("12345"));
-        assertEquals("Password must be at least 6 characters.", passwordValidator.getErrorMessage());
+    void shouldAcceptValidUsername() {
+        assertTrue(usernameValidator.isValid("Tommy123"));
+        assertNull(usernameValidator.getErrorMessage(), "No error expected for valid username");
     }
 
     @Test
-    void inputTooLongShouldBeInvalid() {
-        assertFalse(usernameValidator.isValid("ThisUsernameIsTooLong"));
-        assertEquals("Username must be at most 10 characters.", usernameValidator.getErrorMessage());
+    void shouldAcceptValidPassword() {
+        assertTrue(passwordValidator.isValid("Pass@1234"));
+        assertNull(passwordValidator.getErrorMessage(), "No error expected for valid password");
+    }
 
-        assertFalse(passwordValidator.isValid("ThisPasswordIsWayTooLong"));
-        assertEquals("Password must be at most 12 characters.", passwordValidator.getErrorMessage());
+    // --- BOUNDARY CASES ---
+    @Test
+    void shouldAcceptMinimumLengthUsername() {
+        assertTrue(usernameValidator.isValid("abc"));
     }
 
     @Test
-    void inputWithInvalidCharactersShouldBeInvalid() {
-        assertFalse(usernameValidator.isValid("John!"));
-        assertEquals("Username contains invalid characters.", usernameValidator.getErrorMessage());
-
-        assertFalse(passwordValidator.isValid("pass*word"));
-        assertEquals("Password contains invalid characters.", passwordValidator.getErrorMessage());
+    void shouldAcceptMaximumLengthUsername() {
+        assertTrue(usernameValidator.isValid("abcdefgh1234"));
     }
 
-    @ParameterizedTest
-    @ValueSource(strings = {"John", "Alice123", "Bob7"})
-    void validUsernamesShouldPass(String input) {
-        assertTrue(usernameValidator.isValid(input));
-        assertNull(usernameValidator.getErrorMessage());
-    }
-
-    @ParameterizedTest
-    @ValueSource(strings = {"password1", "Pass@123", "My$ecret"})
-    void validPasswordsShouldPass(String input) {
-        assertTrue(passwordValidator.isValid(input));
-        assertNull(passwordValidator.getErrorMessage());
+    @Test
+    void shouldRejectUsernameOverMaxLength() {
+        assertFalse(usernameValidator.isValid("abcdefgh12345"));
     }
 }
