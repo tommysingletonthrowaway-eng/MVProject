@@ -20,9 +20,6 @@ public class AppContext {
 
 
     public AppContext() {
-        // Serialisation
-        UserStorage userStorage = new UserStorage(USERS_FILE_PATH, new SimpleXOREncryption("BasicKey"));
-
         // Validators
         Validator bankAccountNameValidator = new BankAccountNameValidator();
         Validator usernameValidator = new UsernameValidator();
@@ -32,6 +29,7 @@ public class AppContext {
         UserRepository userRepository = new UserRepository();
 
         // Services
+        UserStorage userStorage = new UserStorage(USERS_FILE_PATH, new SimpleXOREncryption("BasicKey"));
         this.userService = new UserServiceImpl(userRepository, userStorage, usernameValidator, passwordValidator);
         this.userService.load();
         this.bankService = new BankAccountServiceImpl(bankAccountNameValidator);

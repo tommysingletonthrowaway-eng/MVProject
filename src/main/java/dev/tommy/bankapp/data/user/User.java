@@ -22,6 +22,10 @@ public class User implements Serializable {
         this.bankAccounts = new ArrayList<>();
     }
 
+    public UUID getUuid() {
+        return uuid;
+    }
+
     // --- Bank Accounts ---
 
     public List<BankAccount> getBankAccounts() {
@@ -56,9 +60,5 @@ public class User implements Serializable {
     public boolean hasAccountNamed(String accountName) {
         return bankAccounts.stream()
                 .anyMatch(acc -> Objects.equals(acc.getIdentifier(), accountName));
-    }
-
-    public UUID getUuid() {
-        return uuid;
     }
 }

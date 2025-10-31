@@ -10,7 +10,6 @@ import dev.tommy.bankapp.exceptions.bankaccount.BankAccountNotFoundException;
 import dev.tommy.bankapp.exceptions.user.*;
 
 import java.util.Optional;
-import java.util.UUID;
 
 public class UserMenu {
     public static void showUser(User user) {
