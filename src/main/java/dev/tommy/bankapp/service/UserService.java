@@ -6,7 +6,7 @@ import dev.tommy.bankapp.exceptions.user.*;
 import java.util.Collection;
 import java.util.UUID;
 
-public interface IUserService {
+public interface UserService {
     void registerUser(String username, String password) throws DuplicateUserException, InvalidUsernameException, InvalidPasswordException;
     User login(String username, String password) throws InvalidUsernameException, InvalidPasswordException;
     void removeUser(UUID userId) throws UserNotFoundException;

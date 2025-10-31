@@ -6,11 +6,10 @@ import dev.tommy.bankapp.validator.Validator;
 import org.mindrot.jbcrypt.BCrypt;
 
 import java.util.Collection;
-import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
-public class UserServiceImpl implements IUserService {
+public class UserServiceImpl implements UserService {
 
     private UserRepository userRepository;
     private final Validator usernameValidator;
