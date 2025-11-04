@@ -17,9 +17,6 @@ public class UserServiceImplTest {
 
     private UserServiceImpl userService;
     private UserRepository userRepository;
-    private UserStorage userStorage;
-    private Validator usernameValidator;
-    private Validator passwordValidator;
 
     @TempDir
     Path tempDir;
@@ -27,10 +24,10 @@ public class UserServiceImplTest {
     @BeforeEach
     void setUp() {
         Path tempFile = tempDir.resolve("userRepoTest.json");
+        UserStorage userStorage = new UserStorage(tempFile.toString(), new NoEncryption());
+        Validator usernameValidator = new UsernameValidator();
+        Validator passwordValidator = new PasswordValidator();
         userRepository = new UserRepository();
-        userStorage = new UserStorage(tempFile.toString(), new NoEncryption());
-        usernameValidator = new UsernameValidator();
-        passwordValidator = new PasswordValidator();
         userService = new UserServiceImpl(userRepository, userStorage, usernameValidator, passwordValidator);
     }
 

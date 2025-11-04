@@ -12,7 +12,6 @@ import static org.junit.jupiter.api.Assertions.*;
 
 class NumberedMenuTest {
 
-    private ByteArrayInputStream testIn;
     private ByteArrayOutputStream testOut;
     private PrintStream out;
 
@@ -24,7 +23,7 @@ class NumberedMenuTest {
 
     private Menu createMenu(String input) {
         // Setup input stream for this specific test
-        testIn = new ByteArrayInputStream(input.getBytes());
+        ByteArrayInputStream testIn = new ByteArrayInputStream(input.getBytes());
         return new NumberedMenu(() -> "Test Menu", false, testIn, out);
     }
 
