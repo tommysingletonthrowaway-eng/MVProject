@@ -29,7 +29,6 @@ public class UserMenu {
                 .addItem("Create new account", "", args -> {
                     promptCreateNewAccount(user);
                     return MenuOperation.CONTINUE;
-
                 })
 
                 .addItem("Manage budget", "", args -> {
